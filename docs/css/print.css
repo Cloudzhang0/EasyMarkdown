@@ -1,0 +1,60 @@
+/* Print Styles */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .menu-bar,
+  .toolbar,
+  .status-bar,
+  .editor-panel,
+  .panel-resizer,
+  .dialog-overlay,
+  .help-overlay {
+    display: none !important;
+  }
+
+  .main-content {
+    display: block;
+  }
+
+  .preview-panel {
+    width: 100% !important;
+    overflow: visible;
+    background: #fff;
+  }
+
+  .preview-content {
+    max-width: none;
+    padding: 0;
+    font-size: 12pt;
+    color: #000;
+  }
+
+  .preview-content h1 { font-size: 24pt; }
+  .preview-content h2 { font-size: 20pt; }
+  .preview-content h3 { font-size: 16pt; }
+
+  .preview-content pre {
+    border: 1px solid #ccc;
+    page-break-inside: avoid;
+  }
+
+  .preview-content img {
+    max-width: 100%;
+    page-break-inside: avoid;
+  }
+
+  .preview-content table {
+    page-break-inside: avoid;
+  }
+
+  .preview-content h1, .preview-content h2, .preview-content h3 {
+    page-break-after: avoid;
+  }
+
+  @page {
+    margin: 2cm;
+  }
+}
