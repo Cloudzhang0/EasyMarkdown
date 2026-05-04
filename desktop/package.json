@@ -20,8 +20,14 @@
     "productName": "EasyMarkdown",
     "files": [
       "main.js",
-      "preload.js",
-      "../web/**/*"
+      "preload.js"
+    ],
+    "extraResources": [
+      {
+        "from": "../web",
+        "to": "web",
+        "filter": ["**/*"]
+      }
     ],
     "win": {
       "target": "nsis",

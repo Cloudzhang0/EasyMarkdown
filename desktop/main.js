@@ -59,7 +59,12 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false);
 
   // Load the web version
-  mainWindow.loadFile(path.join(__dirname, '..', 'web', 'index.html'));
+  // Packaged: web files are in resources/web/ (via extraResources)
+  // Dev: web files are at ../web/ relative to desktop/
+  const webPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'web', 'index.html')
+    : path.join(__dirname, '..', 'web', 'index.html');
+  mainWindow.loadFile(webPath);
 
   mainWindow.on('close', () => {
     saveWindowState();

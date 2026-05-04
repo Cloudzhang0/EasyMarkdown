@@ -53,6 +53,11 @@ npm run build:linux
 
 构建产物将输出到 `dist/` 目录。
 
+编译完成后，在 `desktop/dist/` 目录下会生成：
+
+- `EasyMarkdown Setup x.x.x.exe` — NSIS 安装包（用户双击安装）
+- `EasyMarkdown x.x.x.exe` — 绿色免安装版（可选）
+
 ## 文件结构
 
 ```
