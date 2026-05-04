@@ -1,0 +1,158 @@
+/* Menu Bar */
+.menu-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  height: 36px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.menu-bar-left, .menu-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.menu-bar-right {
+  gap: 12px;
+}
+
+.menu-item {
+  position: relative;
+}
+
+.menu-label {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 10px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  transition: all var(--transition);
+  border-radius: 0;
+}
+
+.menu-label:hover,
+.menu-item.open .menu-label {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.menu-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--menu-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  padding: 4px 0;
+  animation: menuFadeIn 0.1s ease;
+}
+
+@keyframes menuFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.menu-item.open .menu-dropdown { display: block; }
+
+.menu-command {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  transition: background var(--transition);
+}
+
+.menu-command:hover { background: var(--menu-hover); }
+
+.menu-command[data-action="undo"],
+.menu-command[data-action="redo"],
+.menu-command[data-action="cut"],
+.menu-command[data-action="copy"],
+.menu-command[data-action="paste"],
+.menu-command[data-action="selectAll"] {
+  /* These get keyboard shortcuts appended via JS */
+}
+
+.menu-separator {
+  height: 1px;
+  background: var(--border-light);
+  margin: 4px 0;
+}
+
+/* Submenu */
+.menu-submenu { position: relative; }
+
+.submenu-trigger::after {
+  content: '\25B6';
+  font-size: 8px;
+  margin-left: 8px;
+  color: var(--text-tertiary);
+}
+
+.submenu-dropdown {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  min-width: 180px;
+  background: var(--menu-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 1001;
+  padding: 4px 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.menu-submenu:hover .submenu-dropdown { display: block; }
+
+.submenu-dropdown .menu-command {
+  font-size: var(--font-size-sm);
+}
+
+/* Language Selector */
+.lang-selector select {
+  padding: 2px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  outline: none;
+}
+
+.lang-selector select:focus {
+  border-color: var(--accent);
+}
+
+/* Privacy Badge */
+.privacy-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 10px;
+  font-weight: 500;
+}
