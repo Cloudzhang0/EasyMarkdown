@@ -1,7 +1,0 @@
-编写程序，生成在线编辑markdown文件工具网站，可以切换世界各种主要语言及
-编写程序，markdown文件编辑软件，本地使用。
-
-网站及软件，主要功能参考https://onlinemarkdown.com/zh-cn及https://dillinger.io/
-1. 主屏幕分左右两栏，有源文件及markdown文件。
-2. 有工具栏，包括markdown文件打开，新建，隐藏预览，markdown语句的格式化按钮，可以插入图片
-3. 包括markdown的入门用法 语法 速查表 及常用工具
