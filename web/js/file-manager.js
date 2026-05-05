@@ -1,10 +1,16 @@
 /**
  * File Manager module - File operations for Web version
  * Uses TabManager for multi-tab state tracking
+ * Caches file content in localStorage for recent file reopening
  */
 var FileManager = (() => {
   var RECENT_KEY = 'easymarkdown_recent';
+  var FILE_CACHE_KEY = 'easymarkdown_file_cache';
   var MAX_RECENT = 10;
+  var MAX_CACHE_SIZE = 2 * 1024 * 1024; // 2MB max per file
+
+  // In-memory file handle cache (session only, for FS Access API)
+  var fileHandles = {};
 
   function init() {
     // Auto-save to localStorage on change
@@ -28,7 +34,7 @@ var FileManager = (() => {
     // Update recent files menu
     try { updateRecentFilesMenu(); } catch(e) {}
 
-    // File input handler
+    // File input handler (fallback for browsers without FS Access API)
     var fileInput = document.getElementById('fileInput');
     if (fileInput) {
       fileInput.addEventListener('change', function(e) {
@@ -38,6 +44,43 @@ var FileManager = (() => {
         }
       });
     }
+  }
+
+  // File content cache operations
+  function getFileCache() {
+    try { return JSON.parse(localStorage.getItem(FILE_CACHE_KEY)) || {}; }
+    catch(e) { return {}; }
+  }
+
+  function saveFileToCache(fileName, content) {
+    if (!fileName || !content) return;
+    if (content.length > MAX_CACHE_SIZE) return; // Skip very large files
+    try {
+      var cache = getFileCache();
+      cache[fileName] = content;
+      localStorage.setItem(FILE_CACHE_KEY, JSON.stringify(cache));
+    } catch(e) {
+      // localStorage might be full - clear old cache entries
+      try {
+        var cache = getFileCache();
+        var keys = Object.keys(cache);
+        if (keys.length > 5) {
+          // Remove oldest entries
+          keys.slice(0, keys.length - 3).forEach(function(k) { delete cache[k]; });
+          cache[fileName] = content;
+          localStorage.setItem(FILE_CACHE_KEY, JSON.stringify(cache));
+        }
+      } catch(e2) {}
+    }
+  }
+
+  function getFileFromCache(fileName) {
+    var cache = getFileCache();
+    return cache[fileName] || null;
+  }
+
+  function hasFSAccessAPI() {
+    return 'showOpenFilePicker' in window;
   }
 
   function openFile(file) {
@@ -57,6 +100,8 @@ var FileManager = (() => {
           }
         }
       }
+      // Cache file content for recent file reopening
+      saveFileToCache(file.name, content);
       addToRecent(file.name, '');
       TabManager.setActiveDirty(false);
     }).catch(function(err) {
@@ -69,20 +114,100 @@ var FileManager = (() => {
     Editor.focus();
   }
 
-  function openFileDialog() {
-    var fileInput = document.getElementById('fileInput');
-    if (fileInput) fileInput.click();
+  async function openFileDialog() {
+    // Desktop mode: use native Electron dialog (must check before FS Access API,
+    // because Electron's Chrome also supports showOpenFilePicker)
+    if (window.electronAPI && window.electronAPI.openFileDialog) {
+      window.electronAPI.openFileDialog();
+      return;
+    }
+    if (hasFSAccessAPI()) {
+      try {
+        var handles = await window.showOpenFilePicker({
+          types: [{
+            description: 'Markdown Files',
+            accept: { 'text/markdown': ['.md', '.markdown'], 'text/plain': ['.txt'] }
+          }],
+          multiple: false
+        });
+        var handle = handles[0];
+        var file = await handle.getFile();
+        var content = await Utils.readFileAsText(file);
+
+        // Store handle for save operations
+        fileHandles[file.name] = handle;
+
+        // Open in tab
+        var existing = TabManager.getAllTabs().find(function(t) { return t.fileName === file.name; });
+        if (existing) {
+          TabManager.switchTab(existing.id);
+        } else {
+          var tab = TabManager.createTab(file.name, content);
+          var allTabs = TabManager.getAllTabs();
+          if (allTabs.length > 1) {
+            var first = allTabs[0];
+            if (!first.fileName && !first.content && !first.isDirty) {
+              TabManager.closeTab(first.id);
+            }
+          }
+        }
+        // Cache file content for recent file reopening
+        saveFileToCache(file.name, content);
+        addToRecent(file.name, '');
+        TabManager.setActiveDirty(false);
+      } catch(e) {
+        if (e.name !== 'AbortError') {
+          console.error('File picker error:', e);
+        }
+      }
+    } else {
+      // Fallback: use legacy file input
+      var fileInput = document.getElementById('fileInput');
+      if (fileInput) fileInput.click();
+    }
+  }
+
+  // Save file using stored handle (FS Access API)
+  async function saveWithHandle() {
+    var tab = TabManager.getCurrentTab();
+    if (!tab || !tab.fileName) return false;
+
+    var handle = fileHandles[tab.fileName];
+    if (!handle) return false;
+
+    try {
+      if (await handle.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+        if (await handle.requestPermission({ mode: 'readwrite' }) !== 'granted') {
+          return false;
+        }
+      }
+      var writable = await handle.createWritable();
+      await writable.write(Editor.getValue());
+      await writable.close();
+      TabManager.setActiveDirty(false);
+      addToRecent(tab.fileName, '');
+      TabManager.saveSession();
+      return true;
+    } catch(e) {
+      console.error('Save with handle failed:', e);
+      return false;
+    }
   }
 
   function save() {
-    var tab = TabManager.getCurrentTab();
-    if (!tab) return;
-    var content = Editor.getValue();
-    var filename = tab.fileName || 'untitled.md';
-    Utils.downloadFile(content, filename, 'text/markdown;charset=utf-8');
-    TabManager.setActiveDirty(false);
-    addToRecent(filename, '');
-    TabManager.saveSession();
+    // Try save with stored handle first (direct write to file)
+    saveWithHandle().then(function(success) {
+      if (success) return;
+      // Fallback: download
+      var tab = TabManager.getCurrentTab();
+      if (!tab) return;
+      var content = Editor.getValue();
+      var filename = tab.fileName || 'untitled.md';
+      Utils.downloadFile(content, filename, 'text/markdown;charset=utf-8');
+      TabManager.setActiveDirty(false);
+      addToRecent(filename, '');
+      TabManager.saveSession();
+    });
   }
 
   function saveAs() {
@@ -147,18 +272,35 @@ var FileManager = (() => {
   }
 
   function openRecentFile(file) {
-    // Check if already open in a tab
+    // 1. Check if already open in a tab
     var existing = TabManager.getAllTabs().find(function(t) { return t.fileName === file.name; });
     if (existing) {
       TabManager.switchTab(existing.id);
       return;
     }
-    // Desktop mode: open by path
+
+    // 2. Desktop mode: open by path
     if (window.electronAPI && file.path) {
       window.electronAPI.openRecentFile(file.path);
       return;
     }
-    // Web mode: no file path available, open dialog
+
+    // 3. Web mode: try cached content
+    var cached = getFileFromCache(file.name);
+    if (cached) {
+      var tab = TabManager.createTab(file.name, cached);
+      var allTabs = TabManager.getAllTabs();
+      if (allTabs.length > 1) {
+        var first = allTabs[0];
+        if (!first.fileName && !first.content && !first.isDirty) {
+          TabManager.closeTab(first.id);
+        }
+      }
+      TabManager.setActiveDirty(false);
+      return;
+    }
+
+    // 4. Fallback: open file dialog
     openFileDialog();
   }
 

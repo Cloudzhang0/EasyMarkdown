@@ -48,11 +48,12 @@ var TabManager = (() => {
     render();
   }
 
-  function createTab(fileName, content) {
+  function createTab(fileName, content, filePath) {
     var tab = {
       id: nextId++,
       fileName: fileName || '',
       content: content || '',
+      filePath: filePath || '',
       isDirty: false,
       scrollTop: 0,
       cursorPos: { line: 0, ch: 0 }
@@ -175,10 +176,11 @@ var TabManager = (() => {
     render();
   }
 
-  function renameTab(id, newName) {
+  function renameTab(id, newName, newFilePath) {
     var tab = getTab(id);
     if (!tab) return;
     tab.fileName = newName;
+    if (newFilePath) tab.filePath = newFilePath;
     if (tab.id === activeTabId) {
       StatusBar.setFileName(newName);
     }

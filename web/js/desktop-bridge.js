@@ -22,16 +22,38 @@ var DesktopBridge = (() => {
     // Listen for events from main process
     window.electronAPI.onFileOpened(function(data) {
       // Open in new tab
-      var existing = TabManager.getAllTabs().find(function(t) { return t.fileName === data.name; });
+      var existing = TabManager.getAllTabs().find(function(t) { return t.filePath === data.path; });
       if (existing) {
         TabManager.switchTab(existing.id);
       } else {
-        TabManager.createTab(data.name, data.content);
+        // Check if a tab with the same fileName exists (e.g. from session restore without filePath)
+        var sameName = TabManager.getAllTabs().find(function(t) { return t.fileName === data.name && !t.filePath; });
+        if (sameName) {
+          // Update existing tab with filePath and content
+          sameName.filePath = data.path;
+          sameName.content = data.content;
+          TabManager.switchTab(sameName.id);
+          // Update editor content
+          try { Editor.setValue(data.content); } catch(e) {}
+        } else {
+          TabManager.createTab(data.name, data.content, data.path);
+        }
       }
       currentFilePath = data.path;
       currentDirPath = data.path.replace(/[/\\][^/\\]+$/, '');
       TabManager.setActiveDirty(false);
     });
+
+    // Update file path tracking when switching tabs
+    var origSwitchTab = TabManager.switchTab.bind(TabManager);
+    TabManager.switchTab = function(id) {
+      origSwitchTab(id);
+      var tab = TabManager.getCurrentTab();
+      if (tab && tab.filePath) {
+        currentFilePath = tab.filePath;
+        currentDirPath = tab.filePath.replace(/[/\\][^/\\]+$/, '');
+      }
+    };
 
     window.electronAPI.onFolderOpened(function(data) {
       showFolderTree(data.path, data.tree);
@@ -68,8 +90,9 @@ var DesktopBridge = (() => {
     var result = await window.electronAPI.saveFile(content, currentFilePath);
     if (result.success) {
       currentFilePath = result.path;
+      currentDirPath = result.path.replace(/[/\\][^/\\]+$/, '');
       TabManager.setActiveDirty(false);
-      TabManager.renameTab(TabManager.getActiveTabId(), result.name);
+      TabManager.renameTab(TabManager.getActiveTabId(), result.name, result.path);
     }
   }
 
@@ -78,8 +101,9 @@ var DesktopBridge = (() => {
     var result = await window.electronAPI.saveFileAs(content);
     if (result.success) {
       currentFilePath = result.path;
+      currentDirPath = result.path.replace(/[/\\][^/\\]+$/, '');
       TabManager.setActiveDirty(false);
-      TabManager.renameTab(TabManager.getActiveTabId(), result.name);
+      TabManager.renameTab(TabManager.getActiveTabId(), result.name, result.path);
     }
   }
 

@@ -239,12 +239,19 @@ var App = (() => {
   }
 
   function showImageDialog() {
+    var localBtn = '';
+    if (window.electronAPI) {
+      localBtn = '<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">' +
+        '<button id="imageLocalBtn" class="btn" style="width:100%">&#128193; ' + (I18n.t('dialog.selectLocalImage') || '选择本地图片') + '</button>' +
+        '</div>';
+    }
     showDialog(
       I18n.t('dialog.insertImage'),
       '<label>' + I18n.t('dialog.imageAlt') + '</label>' +
       '<input type="text" id="imageAltInput" placeholder="Image description">' +
       '<label>' + I18n.t('dialog.imageURL') + '</label>' +
-      '<input type="url" id="imageURLInput" placeholder="https://">',
+      '<input type="url" id="imageURLInput" placeholder="https://">' +
+      localBtn,
       [
         { label: I18n.t('dialog.cancel') },
         {
@@ -259,6 +266,59 @@ var App = (() => {
         }
       ]
     );
+    // Bind local file selection button (desktop only)
+    var localBtnEl = document.getElementById('imageLocalBtn');
+    if (localBtnEl) {
+      localBtnEl.addEventListener('click', function() {
+        selectLocalImage();
+      });
+    }
+  }
+
+  function selectLocalImage() {
+    if (!window.electronAPI || !window.electronAPI.selectImageFile) return;
+    // Get current file directory for saving image
+    var currentDir = null;
+    try {
+      var tab = TabManager.getCurrentTab();
+      if (tab && tab.filePath) {
+        currentDir = tab.filePath.replace(/[/\\][^/\\]+$/, '');
+      }
+    } catch(e) {}
+    if (!currentDir) {
+      try { currentDir = DesktopBridge.getCurrentDirPath(); } catch(e) {}
+    }
+    // Open native file dialog to select image
+    window.electronAPI.selectImageFile().then(function(result) {
+      if (!result || !result.path) return;
+      var imagePath = result.path;
+      var fileName = result.name;
+      var alt = document.getElementById('imageAltInput');
+      var altText = alt ? alt.value : fileName.replace(/\.[^.]+$/, '');
+
+      if (currentDir) {
+        // Copy image to images/ directory next to the md file
+        return window.electronAPI.copyImageToImages(imagePath, currentDir).then(function(copyResult) {
+          if (copyResult && copyResult.success) {
+            return copyResult.relativePath;
+          }
+          // Fallback: use absolute path
+          return imagePath;
+        });
+      } else {
+        // No save path: use absolute path directly
+        return imagePath;
+      }
+    }).then(function(insertPath) {
+      if (insertPath) {
+        var alt = document.getElementById('imageAltInput');
+        var altText = alt ? alt.value : 'image';
+        document.getElementById('dialogOverlay').style.display = 'none';
+        Editor.replaceSelection('![' + altText + '](' + insertPath + ')');
+      }
+    }).catch(function(err) {
+      console.error('Select local image error:', err);
+    });
   }
 
   function showTableDialog() {

@@ -21,6 +21,17 @@ function loadWindowState() {
   }
 }
 
+// Extract .md file path from command line arguments (Windows file association)
+function getFileFromArgv(argv) {
+  for (let i = 1; i < argv.length; i++) {
+    const arg = argv[i];
+    if (!arg.startsWith('--') && /\.(md|markdown|txt)$/i.test(arg)) {
+      return arg;
+    }
+  }
+  return null;
+}
+
 function saveWindowState() {
   if (!mainWindow) return;
   const bounds = mainWindow.getBounds();
@@ -48,6 +59,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       spellcheck: false,
+      webSecurity: false,  // Allow loading local images
     },
   });
 
@@ -439,6 +451,61 @@ ipcMain.handle('copy-image-to-images', async (event, { sourcePath, targetDir }) 
   }
 });
 
+ipcMain.handle('resolve-image', async (event, { src, currentDir }) => {
+  // Skip URLs and data URIs
+  if (/^(data:|https?:|file:)/.test(src)) return src;
+  if (!currentDir) return src;
+
+  let absPath;
+  if (path.isAbsolute(src)) {
+    absPath = src;
+  } else {
+    absPath = path.resolve(currentDir, src);
+  }
+
+  try {
+    const data = fs.readFileSync(absPath);
+    const ext = path.extname(absPath).slice(1).toLowerCase();
+    const mimeMap = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', svg: 'image/svg+xml', webp: 'image/webp', bmp: 'image/bmp', ico: 'image/x-icon' };
+    const mime = mimeMap[ext] || 'image/png';
+    return `data:${mime};base64,${data.toString('base64')}`;
+  } catch (e) {
+    return src; // Failed to read - return original path
+  }
+});
+
+// Save clipboard image to images/ directory
+ipcMain.handle('save-clipboard-image', async (event, { imageBuffer, targetDir, ext }) => {
+  try {
+    const imagesDir = path.join(targetDir, 'images');
+    if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const fileName = `paste-${timestamp}-${random}.${ext}`;
+    const filePath = path.join(imagesDir, fileName);
+    const buffer = Buffer.from(imageBuffer);
+    fs.writeFileSync(filePath, buffer);
+    return { success: true, relativePath: `images/${fileName}` };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// Open native file dialog to select an image file
+ipcMain.handle('select-image-file', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select Image',
+    filters: [
+      { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+    properties: ['openFile'],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  const filePath = result.filePaths[0];
+  return { path: filePath, name: path.basename(filePath) };
+});
+
 ipcMain.handle('exit-app', async () => {
   app.quit();
 });
@@ -518,8 +585,37 @@ ipcMain.handle('refresh-folder-tree', async (event, { dirPath }) => {
   }
 });
 
-// App lifecycle
-app.whenReady().then(createWindow);
+// Single instance lock - prevent multiple app instances
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Another instance tried to launch - bring this window to front and open the file
+    const filePath = getFileFromArgv(commandLine);
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      if (filePath) {
+        loadFile(filePath);
+      }
+    }
+  });
+
+  app.whenReady().then(() => {
+    createWindow();
+
+    // Open file passed via command line (e.g. double-click associated .md file)
+    const startupFile = getFileFromArgv(process.argv);
+    if (startupFile) {
+      // Wait for renderer to initialize before loading file
+      mainWindow.webContents.once('did-finish-load', () => {
+        setTimeout(() => loadFile(startupFile), 500);
+      });
+    }
+  });
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

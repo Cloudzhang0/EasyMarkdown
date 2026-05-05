@@ -16,7 +16,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Image operations (Desktop enhancement)
   readImageFile: (filePath) => ipcRenderer.invoke('read-image-file', filePath),
+  resolveImage: (src, currentDir) => ipcRenderer.invoke('resolve-image', { src, currentDir }),
   copyImageToImages: (sourcePath, targetDir) => ipcRenderer.invoke('copy-image-to-images', { sourcePath, targetDir }),
+  saveClipboardImage: (imageBuffer, targetDir, ext) => ipcRenderer.invoke('save-clipboard-image', { imageBuffer, targetDir, ext }),
+  selectImageFile: () => ipcRenderer.invoke('select-image-file'),
 
   // File system operations for context menu
   createFile: (dirPath, fileName) => ipcRenderer.invoke('create-file', { dirPath, fileName }),
