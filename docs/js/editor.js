@@ -44,11 +44,73 @@ var Editor = (() => {
       try { StatusBar.updateCursorPosition(cm); } catch(e) {}
     });
 
+    // Handle image paste from clipboard
+    cm.on('paste', function(cmInstance, e) {
+      try {
+        var items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            e.preventDefault();
+            var blob = items[i].getAsFile();
+            handleImagePaste(blob);
+            return;
+          }
+        }
+      } catch(err) { console.error('Paste image error:', err); }
+    });
+
     // Restore font size
     var savedSize = localStorage.getItem('easymarkdown_fontsize');
     if (savedSize) {
       fontSize = parseInt(savedSize, 10);
       applyFontSize();
+    }
+  }
+
+  function handleImagePaste(blob) {
+    if (!blob) return;
+    var ext = 'png';
+    if (blob.type === 'image/jpeg') ext = 'jpg';
+    else if (blob.type === 'image/gif') ext = 'gif';
+    else if (blob.type === 'image/webp') ext = 'webp';
+
+    // Desktop mode: save to images/ directory via IPC
+    if (window.electronAPI && window.electronAPI.saveClipboardImage) {
+      var currentDir = null;
+      try {
+        var tab = TabManager.getCurrentTab();
+        if (tab && tab.filePath) {
+          currentDir = tab.filePath.replace(/[/\\][^/\\]+$/, '');
+        }
+      } catch(e) {}
+      if (!currentDir) {
+        try { currentDir = DesktopBridge.getCurrentDirPath(); } catch(e) {}
+      }
+      if (!currentDir) {
+        alert('Please save the file first before pasting images.');
+        return;
+      }
+      blob.arrayBuffer().then(function(buffer) {
+        var uint8 = Array.from(new Uint8Array(buffer));
+        return window.electronAPI.saveClipboardImage(uint8, currentDir, ext);
+      }).then(function(result) {
+        if (result && result.success) {
+          insertAtCursor('![image](' + result.relativePath + ')');
+        } else {
+          console.error('Failed to save image:', result && result.error);
+        }
+      }).catch(function(err) {
+        console.error('Image paste error:', err);
+      });
+    } else {
+      // Web mode: convert to base64 data URL
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var dataUrl = e.target.result;
+        insertAtCursor('![image](' + dataUrl + ')');
+      };
+      reader.readAsDataURL(blob);
     }
   }
 

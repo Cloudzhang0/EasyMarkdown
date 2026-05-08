@@ -41,16 +41,28 @@ var Preview = (() => {
     // Process LaTeX math before marked parsing
     let processed = preprocessMath(content);
 
+    // In Electron mode: resolve relative image paths to absolute file:// URLs
+    if (window.electronAPI) {
+      processed = resolveLocalImagePaths(processed);
+    }
+
     // Render markdown to HTML
     let html = marked.parse(processed);
 
     // Sanitize HTML (preserve data-math for KaTeX, SVG attrs for Mermaid)
+    // ALLOW_UNKNOWN_PROTOCOLS: allow file:// and relative image paths
     html = DOMPurify.sanitize(html, {
       ADD_TAGS: ['svg', 'path', 'line', 'polyline', 'polygon', 'circle', 'rect', 'text', 'g', 'defs', 'use', 'marker'],
-      ADD_ATTR: ['viewBox', 'd', 'fill', 'stroke', 'stroke-width', 'cx', 'cy', 'r', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'points', 'transform', 'text-anchor', 'dominant-baseline', 'marker-end', 'marker-start', 'refX', 'refY', 'orient', 'markerWidth', 'markerHeight', 'data-math', 'class'],
+      ADD_ATTR: ['viewBox', 'd', 'fill', 'stroke', 'stroke-width', 'cx', 'cy', 'r', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'points', 'transform', 'text-anchor', 'dominant-baseline', 'marker-end', 'marker-start', 'refX', 'refY', 'orient', 'markerWidth', 'markerHeight', 'data-math', 'class', 'src'],
+      ALLOW_UNKNOWN_PROTOCOLS: true,
     });
 
     previewEl.innerHTML = html;
+
+    // Add referrerpolicy to prevent hotlink blocking (e.g. CSDN images)
+    previewEl.querySelectorAll('img').forEach(function(img) {
+      img.setAttribute('referrerpolicy', 'no-referrer');
+    });
 
     // Apply syntax highlighting to code blocks
     previewEl.querySelectorAll('pre code').forEach(block => {
@@ -68,6 +80,9 @@ var Preview = (() => {
 
     // Process task lists
     processTaskLists();
+
+    // Process local images (Electron only)
+    processLocalImages();
   }
 
   function preprocessMath(text) {
@@ -145,6 +160,70 @@ var Preview = (() => {
         li.innerHTML = text.replace(/^\[[ xX]\]\s/, '');
         li.insertBefore(checkbox, li.firstChild);
       }
+    });
+  }
+
+  // Resolve relative image paths in markdown to absolute file:// URLs (Electron only)
+  // This runs BEFORE marked.parse() so DOMPurify can't strip the resolved URLs
+  function resolveLocalImagePaths(content) {
+    if (!window.electronAPI) return content;
+
+    var currentDir = null;
+    try {
+      var tab = TabManager.getCurrentTab();
+      if (tab && tab.filePath) {
+        currentDir = tab.filePath.replace(/[/\\][^/\\]+$/, '');
+      }
+    } catch(e) {}
+    if (!currentDir) {
+      try { currentDir = DesktopBridge.getCurrentDirPath(); } catch(e) {}
+    }
+    if (!currentDir) return content;
+
+    // Match markdown image syntax: ![alt](path)
+    return content.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, function(match, alt, src) {
+      // Skip URLs and data URIs
+      if (/^(https?:|data:|file:)/.test(src)) return match;
+      // Skip if src is empty
+      if (!src.trim()) return match;
+      // Resolve relative path to absolute file:// URL
+      var absPath = currentDir + '/' + src.replace(/^\.\//, '');
+      // Normalize path separators
+      absPath = absPath.replace(/\\/g, '/');
+      // Encode spaces and special characters for URL
+      absPath = encodeURI(absPath);
+      // Ensure proper file:// URL format
+      if (!absPath.startsWith('file://')) {
+        absPath = 'file:///' + absPath;
+      }
+      return '![' + alt + '](' + absPath + ')';
+    });
+  }
+
+  function processLocalImages() {
+    if (!window.electronAPI || !window.electronAPI.resolveImage) return;
+    var currentDir = null;
+    try {
+      var tab = TabManager.getCurrentTab();
+      if (tab && tab.filePath) {
+        currentDir = tab.filePath.replace(/[/\\][^/\\]+$/, '');
+      }
+    } catch(e) {}
+    if (!currentDir) {
+      try { currentDir = DesktopBridge.getCurrentDirPath(); } catch(e) {}
+    }
+    if (!currentDir) return;
+
+    previewEl.querySelectorAll('img').forEach(function(img) {
+      var src = img.getAttribute('src');
+      if (!src) return;
+      if (/^(https?:|data:)/.test(src)) return;
+
+      window.electronAPI.resolveImage(src, currentDir).then(function(dataUrl) {
+        if (dataUrl && dataUrl !== src) {
+          img.src = dataUrl;
+        }
+      });
     });
   }
 
