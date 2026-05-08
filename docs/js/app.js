@@ -5,12 +5,138 @@
 var App = (() => {
   var isDark = false;
 
+  // 格式刷状态
+  var formatPainterState = { active: false, prefix: '', suffix: '', type: '' };
+  // 缓存最后一次选区（因为点击工具栏按钮会清除编辑器选区）
+  var lastSelection = { text: '', from: null, to: null };
+
+  // 初始化选区缓存监听（在 Editor.init() 之后调用）
+  function initFormatPainter() {
+    var cm = Editor.getCM();
+    if (!cm) return;
+    cm.on('cursorActivity', function() {
+      lastSelection = {
+        text: cm.getSelection(),
+        from: cm.getCursor('from'),
+        to: cm.getCursor('to')
+      };
+    });
+  }
+
+  // 从缓存的选区检测 Markdown 格式标记
+  function detectFormat() {
+    var cm = Editor.getCM();
+    if (!cm || !lastSelection.from) {
+      return { prefix: '', suffix: '' };
+    }
+
+    var from = lastSelection.from;
+    var to = lastSelection.to;
+
+    // 有选中文本时检测行内包裹标记
+    if (lastSelection.text) {
+      var beforeRange = { line: from.line, ch: Math.max(0, from.ch - 5) };
+      var afterRange = { line: to.line, ch: Math.min(cm.getLine(to.line).length, to.ch + 5) };
+      var textBefore = cm.getRange(beforeRange, from);
+      var textAfter = cm.getRange(to, afterRange);
+
+      // 按优先级检测标记（长标记优先，避免 * 被误判为 ** 的一部分）
+      var markers = [
+        { prefix: '`', suffix: '`' },
+        { prefix: '***', suffix: '***' },
+        { prefix: '**', suffix: '**' },
+        { prefix: '~~', suffix: '~~' },
+        { prefix: '^{', suffix: '}' },
+        { prefix: '_{', suffix: '}' },
+        { prefix: '*', suffix: '*' }
+      ];
+
+      for (var i = 0; i < markers.length; i++) {
+        var m = markers[i];
+        if (textBefore.endsWith(m.prefix) && textAfter.startsWith(m.suffix)) {
+          return { prefix: m.prefix, suffix: m.suffix };
+        }
+      }
+    }
+
+    // 检测标题格式（行首 # 标记）
+    var lineText = cm.getLine(from.line);
+    var headingMatch = lineText.match(/^(#{1,6})\s/);
+    if (headingMatch) {
+      return { prefix: headingMatch[1] + ' ', suffix: '' };
+    }
+
+    return { prefix: '', suffix: '' };
+  }
+
+  // 格式刷动作（点击按钮触发）
+  function formatPainterAction() {
+    if (formatPainterState.active) {
+      var cm = Editor.getCM();
+      if (!cm) { deactivateFormatPainter(); return; }
+
+      if (formatPainterState.type === 'prefix') {
+        // 标题格式：应用到行首
+        var line = (lastSelection.from && lastSelection.from.line != null) ? lastSelection.from.line : cm.getCursor().line;
+        applyHeadingToLine(line, formatPainterState.prefix);
+      } else {
+        // 包裹格式：应用到选中文本（或缓存的选区）
+        var sel = Editor.getSelection() || lastSelection.text;
+        if (sel && formatPainterState.prefix) {
+          var curSel = cm.getSelection();
+          if (curSel) {
+            Editor.replaceSelection(formatPainterState.prefix + curSel + formatPainterState.suffix);
+          } else if (lastSelection.from && lastSelection.to) {
+            cm.replaceRange(
+              formatPainterState.prefix + lastSelection.text + formatPainterState.suffix,
+              lastSelection.from,
+              lastSelection.to
+            );
+          }
+        }
+      }
+      deactivateFormatPainter();
+    } else {
+      // 未激活 → 从缓存选区拾取格式
+      var fmt = detectFormat();
+      if (fmt.prefix) {
+        var type = fmt.suffix === '' ? 'prefix' : 'wrap';
+        formatPainterState = { active: true, prefix: fmt.prefix, suffix: fmt.suffix, type: type };
+        var btn = document.querySelector('[data-action="formatPainter"]');
+        if (btn) btn.classList.add('format-painter-active');
+      }
+    }
+  }
+
+  function applyHeadingToLine(lineNum, prefix) {
+    var cm = Editor.getCM();
+    if (!cm) return;
+    var lineContent = cm.getLine(lineNum);
+    if (lineContent == null) return;
+    var existingMatch = lineContent.match(/^(#{1,6})\s*/);
+    if (existingMatch && existingMatch[0] && existingMatch[0].length > 0) {
+      // 替换已有的标题标记
+      var rest = lineContent.substring(existingMatch[0].length);
+      cm.replaceRange(prefix + rest, { line: lineNum, ch: 0 }, { line: lineNum, ch: lineContent.length });
+    } else {
+      // 在行首插入标题标记
+      cm.replaceRange(prefix, { line: lineNum, ch: 0 });
+    }
+  }
+
+  function deactivateFormatPainter() {
+    formatPainterState = { active: false, prefix: '', suffix: '', type: '' };
+    var btn = document.querySelector('[data-action="formatPainter"]');
+    if (btn) btn.classList.remove('format-painter-active');
+  }
+
   function init() {
     // Initialize i18n first
     try { I18n.setLanguage(I18n.detectLanguage()); } catch(e) { console.error('I18n init error:', e); }
 
     // Initialize modules with individual error handling
     try { Editor.init(); } catch(e) { console.error('Editor init error:', e); }
+    try { initFormatPainter(); } catch(e) { console.error('FormatPainter init error:', e); }
     try { Preview.init(); } catch(e) { console.error('Preview init error:', e); }
     try { Splitter.init(); } catch(e) { console.error('Splitter init error:', e); }
     try { Toolbar.init(); } catch(e) { console.error('Toolbar init error:', e); }
@@ -152,6 +278,7 @@ var App = (() => {
         case 'orderedList': Editor.insertLinePrefix('1. '); break;
         case 'taskList': Editor.insertLinePrefix('- [ ] '); break;
         case 'horizontalRule': Editor.insertAtCursor('\n---\n'); break;
+        case 'formatPainter': formatPainterAction(); break;
         case 'heading': break; // Handled by toolbar dropdown
         case 'link': showLinkDialog(); break;
         case 'image': showImageDialog(); break;

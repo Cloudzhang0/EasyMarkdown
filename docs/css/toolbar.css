@@ -87,3 +87,13 @@
 .heading-dropdown button.h4 { font-size: 1em; }
 .heading-dropdown button.h5 { font-size: 0.9em; }
 .heading-dropdown button.h6 { font-size: 0.85em; color: var(--text-secondary); }
+
+/* Format Painter active state */
+.toolbar-btn.format-painter-active {
+  background: var(--accent, #1a73e8);
+  color: #fff;
+}
+.toolbar-btn.format-painter-active:hover {
+  background: var(--accent-hover, #1565c0);
+  color: #fff;
+}
