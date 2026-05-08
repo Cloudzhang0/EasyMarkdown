@@ -239,12 +239,10 @@ var App = (() => {
   }
 
   function showImageDialog() {
-    var localBtn = '';
-    if (window.electronAPI) {
-      localBtn = '<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">' +
-        '<button id="imageLocalBtn" class="btn" style="width:100%">&#128193; ' + (I18n.t('dialog.selectLocalImage') || '选择本地图片') + '</button>' +
-        '</div>';
-    }
+    // Always show "select local image" button (web uses file input + base64, desktop uses native dialog)
+    var localBtn = '<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">' +
+      '<button id="imageLocalBtn" class="btn" style="width:100%">&#128193; ' + (I18n.t('dialog.selectLocalImage') || '选择本地图片') + '</button>' +
+      '</div>';
     showDialog(
       I18n.t('dialog.insertImage'),
       '<label>' + I18n.t('dialog.imageAlt') + '</label>' +
@@ -276,49 +274,62 @@ var App = (() => {
   }
 
   function selectLocalImage() {
-    if (!window.electronAPI || !window.electronAPI.selectImageFile) return;
-    // Get current file directory for saving image
-    var currentDir = null;
-    try {
-      var tab = TabManager.getCurrentTab();
-      if (tab && tab.filePath) {
-        currentDir = tab.filePath.replace(/[/\\][^/\\]+$/, '');
+    // Desktop mode: use native file dialog + copy to images/ directory
+    if (window.electronAPI && window.electronAPI.selectImageFile) {
+      var currentDir = null;
+      try {
+        var tab = TabManager.getCurrentTab();
+        if (tab && tab.filePath) {
+          currentDir = tab.filePath.replace(/[/\\][^/\\]+$/, '');
+        }
+      } catch(e) {}
+      if (!currentDir) {
+        try { currentDir = DesktopBridge.getCurrentDirPath(); } catch(e) {}
       }
-    } catch(e) {}
-    if (!currentDir) {
-      try { currentDir = DesktopBridge.getCurrentDirPath(); } catch(e) {}
-    }
-    // Open native file dialog to select image
-    window.electronAPI.selectImageFile().then(function(result) {
-      if (!result || !result.path) return;
-      var imagePath = result.path;
-      var fileName = result.name;
-      var alt = document.getElementById('imageAltInput');
-      var altText = alt ? alt.value : fileName.replace(/\.[^.]+$/, '');
-
-      if (currentDir) {
-        // Copy image to images/ directory next to the md file
-        return window.electronAPI.copyImageToImages(imagePath, currentDir).then(function(copyResult) {
-          if (copyResult && copyResult.success) {
-            return copyResult.relativePath;
-          }
-          // Fallback: use absolute path
-          return imagePath;
-        });
-      } else {
-        // No save path: use absolute path directly
+      window.electronAPI.selectImageFile().then(function(result) {
+        if (!result || !result.path) return;
+        var imagePath = result.path;
+        var fileName = result.name;
+        if (currentDir) {
+          return window.electronAPI.copyImageToImages(imagePath, currentDir).then(function(copyResult) {
+            if (copyResult && copyResult.success) return copyResult.relativePath;
+            return imagePath;
+          });
+        }
         return imagePath;
-      }
-    }).then(function(insertPath) {
-      if (insertPath) {
+      }).then(function(insertPath) {
+        if (insertPath) {
+          var alt = document.getElementById('imageAltInput');
+          var altText = alt ? alt.value : 'image';
+          document.getElementById('dialogOverlay').style.display = 'none';
+          Editor.replaceSelection('![' + altText + '](' + insertPath + ')');
+        }
+      }).catch(function(err) {
+        console.error('Select local image error:', err);
+      });
+      return;
+    }
+    // Web mode: use hidden file input + convert to base64 data URL
+    var fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/png,image/jpeg,image/gif,image/webp,image/bmp,image/svg+xml';
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+    fileInput.addEventListener('change', function() {
+      var file = fileInput.files[0];
+      if (!file) { document.body.removeChild(fileInput); return; }
+      var reader = new FileReader();
+      reader.onload = function(e) {
         var alt = document.getElementById('imageAltInput');
-        var altText = alt ? alt.value : 'image';
+        var altText = alt ? alt.value : file.name.replace(/\.[^.]+$/, '');
         document.getElementById('dialogOverlay').style.display = 'none';
-        Editor.replaceSelection('![' + altText + '](' + insertPath + ')');
-      }
-    }).catch(function(err) {
-      console.error('Select local image error:', err);
+        Editor.replaceSelection('![' + altText + '](' + e.target.result + ')');
+        document.body.removeChild(fileInput);
+      };
+      reader.onerror = function() { document.body.removeChild(fileInput); };
+      reader.readAsDataURL(file);
     });
+    fileInput.click();
   }
 
   function showTableDialog() {
