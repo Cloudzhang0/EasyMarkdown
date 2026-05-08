@@ -44,16 +44,10 @@ var DesktopBridge = (() => {
       TabManager.setActiveDirty(false);
     });
 
-    // Update file path tracking when switching tabs
-    var origSwitchTab = TabManager.switchTab.bind(TabManager);
-    TabManager.switchTab = function(id) {
-      origSwitchTab(id);
-      var tab = TabManager.getCurrentTab();
-      if (tab && tab.filePath) {
-        currentFilePath = tab.filePath;
-        currentDirPath = tab.filePath.replace(/[/\\][^/\\]+$/, '');
-      }
-    };
+    // NOTE: We do NOT override TabManager.switchTab/createTab/render here because
+    // those IIFE-internal functions use local variable references, bypassing any
+    // overrides on the exported TabManager object.  Instead, nativeSave() reads
+    // filePath directly from the current tab at save time.
 
     window.electronAPI.onFolderOpened(function(data) {
       showFolderTree(data.path, data.tree);
@@ -87,7 +81,12 @@ var DesktopBridge = (() => {
 
   async function nativeSave() {
     var content = Editor.getValue();
-    var result = await window.electronAPI.saveFile(content, currentFilePath);
+    // Read filePath DIRECTLY from the current tab — this is the authoritative
+    // source and avoids stale-tracking bugs when tabs are created/switched
+    // via DOM event handlers that bypass TabManager-exported methods.
+    var tab = TabManager.getCurrentTab();
+    var filePath = tab && tab.filePath ? tab.filePath : null;
+    var result = await window.electronAPI.saveFile(content, filePath);
     if (result.success) {
       currentFilePath = result.path;
       currentDirPath = result.path.replace(/[/\\][^/\\]+$/, '');

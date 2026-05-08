@@ -362,8 +362,10 @@ function addToRecent(filePath) {
 // IPC Handlers
 ipcMain.handle('save-file-content', async (event, { content, filePath }) => {
   try {
-    const targetPath = filePath || currentFilePath;
-    if (!targetPath) {
+    // Use ONLY renderer's filePath (the authoritative source).
+    // Do NOT fall back to main.js currentFilePath which may be stale
+    // and cause overwriting the wrong file.
+    if (!filePath) {
       const result = await dialog.showSaveDialog(mainWindow, {
         title: 'Save Markdown File',
         defaultPath: 'untitled.md',
@@ -379,8 +381,8 @@ ipcMain.handle('save-file-content', async (event, { content, filePath }) => {
       addToRecent(result.filePath);
       return { success: true, path: result.filePath, name: path.basename(result.filePath) };
     }
-    fs.writeFileSync(targetPath, content, 'utf-8');
-    return { success: true, path: targetPath, name: path.basename(targetPath) };
+    fs.writeFileSync(filePath, content, 'utf-8');
+    return { success: true, path: filePath, name: path.basename(filePath) };
   } catch (err) {
     return { success: false, error: err.message };
   }
