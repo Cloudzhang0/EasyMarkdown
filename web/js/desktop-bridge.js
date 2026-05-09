@@ -219,15 +219,29 @@ var DesktopBridge = (() => {
   }
 
   function initEditorContextMenu() {
-    // Wait for CodeMirror to be ready
-    setTimeout(function() {
+    // Bind context menu to CodeMirror when ready
+    function bindContextMenu() {
       var editorElement = document.querySelector('.CodeMirror');
-      if (editorElement) {
+      if (editorElement && !editorElement._contextMenuBound) {
+        editorElement._contextMenuBound = true;
         editorElement.addEventListener('contextmenu', function(e) {
           showEditorContextMenu(e);
         });
+        return true;
       }
-    }, 500);
+      return false;
+    }
+
+    // Try immediately, then retry with intervals
+    if (!bindContextMenu()) {
+      var retryCount = 0;
+      var retryTimer = setInterval(function() {
+        retryCount++;
+        if (bindContextMenu() || retryCount > 20) {
+          clearInterval(retryTimer);
+        }
+      }, 200);
+    }
   }
 
   function showContextMenu(e, itemPath, itemType) {
