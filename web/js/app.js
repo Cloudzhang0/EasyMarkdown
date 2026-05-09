@@ -5,6 +5,9 @@
 var App = (() => {
   var isDark = false;
 
+  // 页面缩放状态
+  var pageZoom = 100;
+
   // 格式刷状态
   var formatPainterState = { active: false, prefix: '', suffix: '', type: '' };
   // 缓存最后一次选区（因为点击工具栏按钮会清除编辑器选区）
@@ -168,6 +171,18 @@ var App = (() => {
       document.getElementById('mainContent').classList.add('preview-hidden');
     }
 
+    // Restore fullscreen preview state
+    if (localStorage.getItem('easymarkdown_fullscreen_preview') === 'true') {
+      document.body.classList.add('fullscreen-preview');
+    }
+
+    // Restore page zoom
+    var savedZoom = localStorage.getItem('easymarkdown_page_zoom');
+    if (savedZoom) {
+      pageZoom = parseInt(savedZoom, 10);
+      if (pageZoom !== 100) applyPageZoom();
+    }
+
     // Window close warning
     window.addEventListener('beforeunload', function(e) {
       // Save current tab state
@@ -260,9 +275,10 @@ var App = (() => {
 
         // View operations
         case 'toggleLineNumbers': Editor.toggleLineNumbers(); break;
-        case 'zoomIn': Editor.zoomIn(); break;
-        case 'zoomOut': Editor.zoomOut(); break;
-        case 'resetZoom': Editor.resetZoom(); break;
+        case 'fullscreenPreview': fullscreenPreview(); break;
+        case 'pageZoomIn': pageZoomIn(); break;
+        case 'pageZoomOut': pageZoomOut(); break;
+        case 'pageZoomReset': pageZoomReset(); break;
         case 'toggleTheme': toggleTheme(); break;
 
         // Formatting
@@ -306,6 +322,31 @@ var App = (() => {
     var main = document.getElementById('mainContent');
     var hidden = main.classList.toggle('preview-hidden');
     localStorage.setItem('easymarkdown_preview_hidden', hidden);
+  }
+
+  // 全屏预览模式
+  function fullscreenPreview() {
+    var active = document.body.classList.toggle('fullscreen-preview');
+    localStorage.setItem('easymarkdown_fullscreen_preview', active);
+  }
+
+  // 页面缩放
+  function pageZoomIn() {
+    if (pageZoom < 200) { pageZoom += 10; applyPageZoom(); }
+  }
+
+  function pageZoomOut() {
+    if (pageZoom > 50) { pageZoom -= 10; applyPageZoom(); }
+  }
+
+  function pageZoomReset() {
+    pageZoom = 100;
+    applyPageZoom();
+  }
+
+  function applyPageZoom() {
+    document.body.style.zoom = (pageZoom / 100);
+    localStorage.setItem('easymarkdown_page_zoom', pageZoom);
   }
 
   // Dialog helpers
@@ -497,5 +538,5 @@ var App = (() => {
     init();
   }
 
-  return { init: init, exec: exec, onContentChange: onContentChange, onLanguageChange: onLanguageChange, toggleTheme: toggleTheme };
+  return { init: init, exec: exec, onContentChange: onContentChange, onLanguageChange: onLanguageChange, toggleTheme: toggleTheme, fullscreenPreview: fullscreenPreview };
 })();
