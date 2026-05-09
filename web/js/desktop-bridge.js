@@ -190,7 +190,7 @@ var DesktopBridge = (() => {
     // Add styles
     var style = document.createElement('style');
     style.textContent =
-      '.context-menu { position: fixed; background: var(--bg-primary, #fff); border: 1px solid var(--border-color, #e0e0e0); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px 0; z-index: 10000; min-width: 200px; display: none; }' +
+      '.context-menu { position: fixed; background: var(--bg-primary, #fff); border: 1px solid var(--border-color, #e0e0e0); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px 0; z-index: 10000; min-width: 200px; max-height: 80vh; overflow-y: auto; display: none; }' +
       '.context-menu-item { display: flex; align-items: center; padding: 8px 16px; cursor: pointer; font-size: 13px; color: var(--text-primary, #333); transition: background 0.15s; }' +
       '.context-menu-item:hover { background: var(--bg-hover, #f5f5f5); }' +
       '.context-menu-item.disabled { color: var(--text-secondary, #999); cursor: default; opacity: 0.5; }' +
@@ -333,20 +333,24 @@ var DesktopBridge = (() => {
     contextMenu.innerHTML = html;
     contextMenu.style.display = 'block';
 
-    // Position menu
-    var x = e.clientX;
-    var y = e.clientY;
+    // Position menu - account for page zoom
+    var zoom = parseFloat(document.body.style.zoom) || 1;
+    var x = e.clientX / zoom;
+    var y = e.clientY / zoom;
     var menuWidth = contextMenu.offsetWidth;
     var menuHeight = contextMenu.offsetHeight;
-    var windowWidth = window.innerWidth;
-    var windowHeight = window.innerHeight;
+    var viewWidth = window.innerWidth / zoom;
+    var viewHeight = window.innerHeight / zoom;
 
-    if (x + menuWidth > windowWidth) {
-      x = windowWidth - menuWidth - 10;
+    // Ensure menu stays fully within viewport
+    if (x + menuWidth > viewWidth - 8) {
+      x = viewWidth - menuWidth - 8;
     }
-    if (y + menuHeight > windowHeight) {
-      y = windowHeight - menuHeight - 10;
+    if (x < 8) x = 8;
+    if (y + menuHeight > viewHeight - 8) {
+      y = y - menuHeight;
     }
+    if (y < 8) y = 8;
 
     contextMenu.style.left = x + 'px';
     contextMenu.style.top = y + 'px';
