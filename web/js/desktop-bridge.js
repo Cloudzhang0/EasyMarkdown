@@ -190,14 +190,14 @@ var DesktopBridge = (() => {
     // Add styles
     var style = document.createElement('style');
     style.textContent =
-      '.context-menu { position: fixed; background: var(--bg-primary, #fff); border: 1px solid var(--border-color, #e0e0e0); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px 0; z-index: 10000; min-width: 200px; max-height: 80vh; overflow-y: auto; display: none; }' +
-      '.context-menu-item { display: flex; align-items: center; padding: 8px 16px; cursor: pointer; font-size: 13px; color: var(--text-primary, #333); transition: background 0.15s; }' +
+      '.context-menu { position: fixed; background: var(--bg-primary, #fff); border: 1px solid var(--border-color, #e0e0e0); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 3px 0; z-index: 10000; min-width: 200px; max-height: 80vh; overflow-y: auto; display: none; }' +
+      '.context-menu-item { display: flex; align-items: center; padding: 4px 14px; cursor: pointer; font-size: 12px; color: var(--text-primary, #333); transition: background 0.15s; line-height: 1.4; }' +
       '.context-menu-item:hover { background: var(--bg-hover, #f5f5f5); }' +
       '.context-menu-item.disabled { color: var(--text-secondary, #999); cursor: default; opacity: 0.5; }' +
       '.context-menu-item.disabled:hover { background: transparent; }' +
-      '.context-menu-item .icon { margin-right: 10px; font-size: 14px; width: 18px; text-align: center; }' +
+      '.context-menu-item .icon { margin-right: 8px; font-size: 13px; width: 16px; text-align: center; }' +
       '.context-menu-item .shortcut { margin-left: auto; font-size: 11px; color: var(--text-secondary, #999); }' +
-      '.context-menu-separator { height: 1px; background: var(--border-color, #e0e0e0); margin: 4px 0; }' +
+      '.context-menu-separator { height: 1px; background: var(--border-color, #e0e0e0); margin: 2px 0; }' +
       '.context-menu-item.danger { color: #e74c3c; }' +
       '.context-menu-item.danger:hover { background: #fdf2f2; }';
     document.head.appendChild(style);
