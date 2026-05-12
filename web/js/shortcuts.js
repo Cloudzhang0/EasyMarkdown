@@ -30,6 +30,13 @@ var Shortcuts = (() => {
       return;
     }
 
+    // F11 - Toggle Full Screen Preview
+    if (e.key === 'F11') {
+      e.preventDefault();
+      App.exec('fullscreenPreview');
+      return;
+    }
+
     // Ctrl+S - Save
     if (isCtrl && e.key === 's') {
       e.preventDefault();
@@ -159,9 +166,10 @@ var Shortcuts = (() => {
       { action: 'orderedList', keys: ['Ctrl', 'Shift', 'O'], macKeys: ['⌘', 'Shift', 'O'] },
       { action: 'togglePreview', keys: ['Ctrl', 'Shift', 'P'], macKeys: ['⌘', 'Shift', 'P'] },
       { action: 'fullscreenPreview', keys: ['Ctrl', 'Shift', 'F'], macKeys: ['⌘', 'Shift', 'F'] },
-      { action: 'zoomIn', keys: ['Ctrl', '+'], macKeys: ['⌘', '+'] },
-      { action: 'zoomOut', keys: ['Ctrl', '-'], macKeys: ['⌘', '-'] },
-      { action: 'resetZoom', keys: ['Ctrl', '0'], macKeys: ['⌘', '0'] },
+      { action: 'fullscreenPreview', keys: ['F11'], macKeys: ['F11'] },
+      { action: 'pageZoomIn', keys: ['Ctrl', '+'], macKeys: ['⌘', '+'] },
+      { action: 'pageZoomOut', keys: ['Ctrl', '-'], macKeys: ['⌘', '-'] },
+      { action: 'pageZoomReset', keys: ['Ctrl', '0'], macKeys: ['⌘', '0'] },
     ];
   }
 

@@ -208,6 +208,7 @@ var TabManager = (() => {
       var el = document.createElement('div');
       el.className = 'tab' + (tab.id === activeTabId ? ' tab-active' : '');
       el.dataset.tabId = tab.id;
+      el.title = tab.fileName || I18n.t('tab.untitled');
 
       // Dirty indicator
       if (tab.isDirty) {

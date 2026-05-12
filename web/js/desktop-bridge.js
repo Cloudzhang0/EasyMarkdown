@@ -386,15 +386,16 @@ var DesktopBridge = (() => {
     var selection = cm.getSelection();
     if (!selection) return;
 
-    // Open search with selected text
-    cm.execCommand('find');
+    // Open custom find dialog with selected text pre-filled
+    App.exec('find');
     setTimeout(function() {
-      var searchField = document.querySelector('.CodeMirror-search-field');
-      if (searchField) {
-        searchField.value = selection;
-        searchField.dispatchEvent(new Event('input'));
+      var findInput = document.getElementById('findInput');
+      if (findInput) {
+        findInput.value = selection;
+        findInput.focus();
+        findInput.select();
       }
-    }, 100);
+    }, 150);
   }
 
   function insertTimestamp() {

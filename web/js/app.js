@@ -180,8 +180,8 @@ var App = (() => {
     var savedZoom = localStorage.getItem('easymarkdown_page_zoom');
     if (savedZoom) {
       pageZoom = parseInt(savedZoom, 10);
-      if (pageZoom !== 100) applyPageZoom();
     }
+    applyPageZoom(); // Always call to ensure clean state (clears old CSS zoom)
 
     // Window close warning
     window.addEventListener('beforeunload', function(e) {
@@ -269,8 +269,8 @@ var App = (() => {
           }
           break;
         case 'selectAll': Editor.selectAll(); break;
-        case 'find': Editor.openSearch(); break;
-        case 'replace': Editor.openReplace(); break;
+        case 'find': showFindDialog(false); break;
+        case 'replace': showFindDialog(true); break;
         case 'togglePreview': togglePreview(); break;
 
         // View operations
@@ -345,8 +345,266 @@ var App = (() => {
   }
 
   function applyPageZoom() {
-    document.body.style.zoom = (pageZoom / 100);
+    var scale = pageZoom / 100;
     localStorage.setItem('easymarkdown_page_zoom', pageZoom);
+
+    // 预览面板用 CSS zoom 缩放（纯渲染，安全）
+    try {
+      var previewPanel = document.querySelector('.preview-panel');
+      if (previewPanel) previewPanel.style.zoom = scale;
+    } catch(e) {}
+
+    // 编辑器字体缩放
+    try {
+      var baseSize = 14;
+      var newSize = Math.max(8, Math.min(36, Math.round(baseSize * scale)));
+      var cmEl = document.querySelector('.CodeMirror');
+      if (cmEl) {
+        cmEl.style.fontSize = newSize + 'px';
+        // 字体改变后必须刷新 CodeMirror 重算字符宽度
+        var cm = Editor.getCM();
+        if (cm) {
+          requestAnimationFrame(function() {
+            cm.refresh();
+          });
+        }
+      }
+    } catch(e) {}
+
+    showZoomIndicator(pageZoom);
+  }
+
+  // 显示缩放比例指示器（2秒后自动消失）
+  var zoomIndicatorTimer = null;
+
+  function showZoomIndicator(percent) {
+    var el = document.getElementById('zoomIndicator');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'zoomIndicator';
+      el.style.cssText = 'position:fixed;bottom:60px;right:20px;background:rgba(0,0,0,0.7);color:#fff;padding:6px 14px;border-radius:6px;font-size:14px;z-index:9999;pointer-events:none;transition:opacity 0.3s;';
+      document.body.appendChild(el);
+    }
+    el.textContent = percent + '%';
+    el.style.opacity = '1';
+    if (zoomIndicatorTimer) clearTimeout(zoomIndicatorTimer);
+    zoomIndicatorTimer = setTimeout(function() {
+      el.style.opacity = '0';
+    }, 1200);
+  }
+
+  // 查找替换对话框（Office 风格）
+  function showFindDialog(replaceMode) {
+    var overlay = document.getElementById('dialogOverlay');
+    var titleEl = document.getElementById('dialogTitle');
+    var bodyEl = document.getElementById('dialogBody');
+    var footerEl = document.getElementById('dialogFooter');
+    var closeBtn = document.getElementById('dialogClose');
+
+    // 构建对话框内容
+    var html = '<div class="find-dialog">';
+    html += '<div class="find-row"><label>' + '查找内容(N)' + '</label>';
+    html += '<input type="text" id="findInput" class="find-input" placeholder="' + '输入查找内容...' + '" autofocus></div>';
+    if (replaceMode) {
+      html += '<div class="find-row"><label>' + '替换为(P)' + '</label>';
+      html += '<input type="text" id="replaceInput" class="find-input" placeholder="' + '输入替换内容...' + '"></div>';
+    }
+    html += '<div class="find-options">';
+    html += '<label class="find-checkbox"><input type="checkbox" id="findCaseSensitive"> ' + '区分大小写' + '</label>';
+    html += '<label class="find-checkbox"><input type="checkbox" id="findRegex"> ' + '正则表达式' + '</label>';
+    html += '</div>';
+    html += '<div class="find-status" id="findStatus"></div>';
+    html += '</div>';
+
+    titleEl.textContent = replaceMode ? '查找替换' : '查找';
+    bodyEl.innerHTML = html;
+
+    // 构建按钮
+    footerEl.innerHTML = '';
+
+    var btnFindPrev = document.createElement('button');
+    btnFindPrev.className = 'btn';
+    btnFindPrev.textContent = '上一个';
+    btnFindPrev.addEventListener('click', function() { doFind(false); });
+    footerEl.appendChild(btnFindPrev);
+
+    var btnFindNext = document.createElement('button');
+    btnFindNext.className = 'btn btn-primary';
+    btnFindNext.textContent = '下一个';
+    btnFindNext.addEventListener('click', function() { doFind(true); });
+    footerEl.appendChild(btnFindNext);
+
+    if (replaceMode) {
+      var btnReplace = document.createElement('button');
+      btnReplace.className = 'btn';
+      btnReplace.textContent = '替换';
+      btnReplace.addEventListener('click', function() { doReplace(); });
+      footerEl.appendChild(btnReplace);
+
+      var btnReplaceAll = document.createElement('button');
+      btnReplaceAll.className = 'btn';
+      btnReplaceAll.textContent = '全部替换';
+      btnReplaceAll.addEventListener('click', function() { doReplaceAll(); });
+      footerEl.appendChild(btnReplaceAll);
+    }
+
+    var btnDone = document.createElement('button');
+    btnDone.className = 'btn';
+    btnDone.textContent = '完成';
+    btnDone.addEventListener('click', function() {
+      overlay.style.display = 'none';
+      try { Editor.focus(); } catch(e) {}
+    });
+    footerEl.appendChild(btnDone);
+
+    closeBtn.onclick = function() {
+      overlay.style.display = 'none';
+      try { Editor.focus(); } catch(e) {}
+    };
+    overlay.style.display = 'flex';
+
+    // 自动聚焦查找输入框
+    setTimeout(function() {
+      var fi = document.getElementById('findInput');
+      if (fi) { fi.focus(); fi.select(); }
+    }, 50);
+
+    // 辅助函数：转义正则特殊字符
+    function escapeRegex(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // 辅助函数：构建搜索对象
+    function buildSearchObj(query) {
+      var caseSense = document.getElementById('findCaseSensitive').checked;
+      var useRegex = document.getElementById('findRegex').checked;
+      try {
+        if (useRegex) {
+          return new RegExp(query, caseSense ? 'g' : 'gi');
+        }
+        return new RegExp(escapeRegex(query), caseSense ? 'g' : 'gi');
+      } catch(e) {
+        return null;
+      }
+    }
+
+    // 辅助函数：更新状态提示
+    function setStatus(msg) {
+      var el = document.getElementById('findStatus');
+      if (el) el.textContent = msg;
+    }
+
+    // 执行查找（forward=true 向下，false 向上）
+    function doFind(forward) {
+      var cm = Editor.getCM();
+      if (!cm) return;
+      var input = document.getElementById('findInput');
+      if (!input || !input.value) { setStatus('请输入查找内容'); return; }
+      var searchObj = buildSearchObj(input.value);
+      if (!searchObj) { setStatus('正则表达式无效'); return; }
+
+      var cursor, found = false;
+      if (forward) {
+        cursor = cm.getSearchCursor(searchObj, cm.getCursor('to'));
+        found = cursor.findNext();
+        if (!found) {
+          cursor = cm.getSearchCursor(searchObj);
+          found = cursor.findNext();
+          if (found) setStatus('已循环到顶部');
+        }
+      } else {
+        cursor = cm.getSearchCursor(searchObj, cm.getCursor('from'));
+        found = cursor.findPrevious();
+        if (!found) {
+          var last = cm.lastLine();
+          cursor = cm.getSearchCursor(searchObj, {line: last, ch: cm.getLine(last).length});
+          found = cursor.findPrevious();
+          if (found) setStatus('已循环到底部');
+        }
+      }
+
+      if (found) {
+        cm.setSelection(cursor.from(), cursor.to());
+        cm.scrollIntoView({from: cursor.from(), to: cursor.to()}, 20);
+        setStatus('找到匹配');
+      } else {
+        setStatus('未找到匹配');
+      }
+    }
+
+    // 替换当前匹配项
+    function doReplace() {
+      var cm = Editor.getCM();
+      if (!cm) return;
+      var input = document.getElementById('findInput');
+      var replaceInput = document.getElementById('replaceInput');
+      if (!input || !input.value) return;
+      var searchObj = buildSearchObj(input.value);
+      if (!searchObj) return;
+
+      var sel = cm.getSelection();
+      if (sel && searchObj.test(sel)) {
+        cm.replaceSelection(replaceInput ? replaceInput.value : '');
+        doFind(true);
+      } else {
+        doFind(true);
+      }
+    }
+
+    // 全部替换
+    function doReplaceAll() {
+      var cm = Editor.getCM();
+      if (!cm) return;
+      var input = document.getElementById('findInput');
+      var replaceInput = document.getElementById('replaceInput');
+      if (!input || !input.value) return;
+      var searchObj = buildSearchObj(input.value);
+      if (!searchObj) return;
+
+      var content = cm.getValue();
+      var replacement = replaceInput ? replaceInput.value : '';
+      // 使用 replace 时需去掉全局 flag 的 lastIndex 问题
+      var flags = searchObj.flags.includes('g') ? searchObj.flags : searchObj.flags + 'g';
+      var globalRegex = new RegExp(searchObj.source, flags);
+      var newContent = content.replace(globalRegex, replacement);
+      if (newContent !== content) {
+        var count = (content.match(globalRegex) || []).length;
+        cm.setValue(newContent);
+        setStatus('已替换 ' + count + ' 处');
+      } else {
+        setStatus('未找到匹配');
+      }
+    }
+
+    // 键盘快捷键
+    var findInput = document.getElementById('findInput');
+    if (findInput) {
+      findInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          doFind(!e.shiftKey);
+        }
+        if (e.key === 'Escape') {
+          overlay.style.display = 'none';
+          try { Editor.focus(); } catch(e) {}
+        }
+      });
+    }
+
+    var replaceInput = document.getElementById('replaceInput');
+    if (replaceInput) {
+      replaceInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (e.shiftKey) { doFind(false); }
+          else { doReplace(); }
+        }
+        if (e.key === 'Escape') {
+          overlay.style.display = 'none';
+          try { Editor.focus(); } catch(e) {}
+        }
+      });
+    }
   }
 
   // Dialog helpers
