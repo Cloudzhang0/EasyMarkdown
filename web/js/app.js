@@ -151,6 +151,12 @@ var App = (() => {
     try { Help.init(); } catch(e) { console.error('Help init error:', e); }
     try { DesktopBridge.init(); } catch(e) { console.error('DesktopBridge init error:', e); }
 
+    // Hide desktop prompt bar when running in Electron
+    if (window.electronAPI) {
+      var promptBar = document.getElementById('desktopPromptBar');
+      if (promptBar) promptBar.style.display = 'none';
+    }
+
     // Apply translations
     try { I18n.applyToDOM(); } catch(e) { console.error('I18n applyToDOM error:', e); }
 

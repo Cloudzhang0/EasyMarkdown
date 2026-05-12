@@ -49,6 +49,7 @@ var I18n = (() => {
       'file.unsavedChanges': '当前文档有未保存的更改，是否继续？',
       'dialog.unsavedChanges': '文件有未保存的更改，确定关闭吗？',
       'tab.untitled': '未命名',
+      'desktopPrompt.text': '提示：这是网页版，文件保存在浏览器中。需要保存到本地电脑？', 'desktopPrompt.link': '下载桌面版',
     },
     'en-US': {
       'menu.file': 'File', 'menu.edit': 'Edit', 'menu.view': 'View', 'menu.help': 'Help',
@@ -84,6 +85,7 @@ var I18n = (() => {
       'file.unsavedChanges': 'You have unsaved changes. Continue?',
       'dialog.unsavedChanges': 'This file has unsaved changes. Close anyway?',
       'tab.untitled': 'Untitled',
+      'desktopPrompt.text': 'Tip: This is the web version. Files are saved in your browser. Want to save to your computer?', 'desktopPrompt.link': 'Download Desktop App',
     }
   };
 
