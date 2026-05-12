@@ -5,8 +5,10 @@
 </p>
 
 一款简洁优雅的 Markdown 编辑器，支持实时预览、多标签、多语言，同时提供网页版和桌面版。
+
 🌐 **在线网页版**：https://cloudzhang0.github.io/EasyMarkdown/
 
+=======
 ## 功能特性
 
 ### 编辑与预览
