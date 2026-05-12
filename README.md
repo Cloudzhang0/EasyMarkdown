@@ -1,5 +1,9 @@
 # EasyMarkdown
 
+<p align="center">
+  <img src="markdown_icon_blue.svg" alt="EasyMarkdown Logo" width="120">
+</p>
+
 一款简洁优雅的 Markdown 编辑器，支持实时预览、多标签、多语言，同时提供网页版和桌面版。
 
 ## 功能特性
@@ -163,6 +167,7 @@ npm run build:linux  # Linux
 - 全屏预览模式：Ctrl+Shift+F 进入，ESC 或 Ctrl+Shift+F 退出，只显示预览面板
 - 整页缩放：Ctrl+滚轮上下滚动缩放（50%-200%），替代原有的仅编辑器字体缩放
 - 视图菜单新增"全屏预览"选项
+- 软件图标：添加 Markdown 蓝色图标（SVG），网页版显示 favicon，桌面版替换默认 Electron 图标
 
 **改进**
 - Ctrl+=/-/0 快捷键改为整页缩放（之前只缩放编辑器字体）

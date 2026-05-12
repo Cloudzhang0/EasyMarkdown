@@ -66,6 +66,9 @@ var Editor = (() => {
       fontSize = parseInt(savedSize, 10);
       applyFontSize();
     }
+
+    // No zoom coordinate fix needed: CSS zoom's clientX and getBoundingClientRect()
+    // are both in viewport pixel space, so they're consistent.
   }
 
   function handleImagePaste(blob) {

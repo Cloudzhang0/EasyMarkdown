@@ -48,11 +48,12 @@ var TabManager = (() => {
     render();
   }
 
-  function createTab(fileName, content) {
+  function createTab(fileName, content, filePath) {
     var tab = {
       id: nextId++,
       fileName: fileName || '',
       content: content || '',
+      filePath: filePath || '',
       isDirty: false,
       scrollTop: 0,
       cursorPos: { line: 0, ch: 0 }
@@ -175,10 +176,11 @@ var TabManager = (() => {
     render();
   }
 
-  function renameTab(id, newName) {
+  function renameTab(id, newName, newFilePath) {
     var tab = getTab(id);
     if (!tab) return;
     tab.fileName = newName;
+    if (newFilePath) tab.filePath = newFilePath;
     if (tab.id === activeTabId) {
       StatusBar.setFileName(newName);
     }
@@ -206,6 +208,7 @@ var TabManager = (() => {
       var el = document.createElement('div');
       el.className = 'tab' + (tab.id === activeTabId ? ' tab-active' : '');
       el.dataset.tabId = tab.id;
+      el.title = tab.fileName || I18n.t('tab.untitled');
 
       // Dirty indicator
       if (tab.isDirty) {

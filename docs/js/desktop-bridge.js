@@ -22,16 +22,32 @@ var DesktopBridge = (() => {
     // Listen for events from main process
     window.electronAPI.onFileOpened(function(data) {
       // Open in new tab
-      var existing = TabManager.getAllTabs().find(function(t) { return t.fileName === data.name; });
+      var existing = TabManager.getAllTabs().find(function(t) { return t.filePath === data.path; });
       if (existing) {
         TabManager.switchTab(existing.id);
       } else {
-        TabManager.createTab(data.name, data.content);
+        // Check if a tab with the same fileName exists (e.g. from session restore without filePath)
+        var sameName = TabManager.getAllTabs().find(function(t) { return t.fileName === data.name && !t.filePath; });
+        if (sameName) {
+          // Update existing tab with filePath and content
+          sameName.filePath = data.path;
+          sameName.content = data.content;
+          TabManager.switchTab(sameName.id);
+          // Update editor content
+          try { Editor.setValue(data.content); } catch(e) {}
+        } else {
+          TabManager.createTab(data.name, data.content, data.path);
+        }
       }
       currentFilePath = data.path;
       currentDirPath = data.path.replace(/[/\\][^/\\]+$/, '');
       TabManager.setActiveDirty(false);
     });
+
+    // NOTE: We do NOT override TabManager.switchTab/createTab/render here because
+    // those IIFE-internal functions use local variable references, bypassing any
+    // overrides on the exported TabManager object.  Instead, nativeSave() reads
+    // filePath directly from the current tab at save time.
 
     window.electronAPI.onFolderOpened(function(data) {
       showFolderTree(data.path, data.tree);
@@ -65,11 +81,17 @@ var DesktopBridge = (() => {
 
   async function nativeSave() {
     var content = Editor.getValue();
-    var result = await window.electronAPI.saveFile(content, currentFilePath);
+    // Read filePath DIRECTLY from the current tab — this is the authoritative
+    // source and avoids stale-tracking bugs when tabs are created/switched
+    // via DOM event handlers that bypass TabManager-exported methods.
+    var tab = TabManager.getCurrentTab();
+    var filePath = tab && tab.filePath ? tab.filePath : null;
+    var result = await window.electronAPI.saveFile(content, filePath);
     if (result.success) {
       currentFilePath = result.path;
+      currentDirPath = result.path.replace(/[/\\][^/\\]+$/, '');
       TabManager.setActiveDirty(false);
-      TabManager.renameTab(TabManager.getActiveTabId(), result.name);
+      TabManager.renameTab(TabManager.getActiveTabId(), result.name, result.path);
     }
   }
 
@@ -78,8 +100,9 @@ var DesktopBridge = (() => {
     var result = await window.electronAPI.saveFileAs(content);
     if (result.success) {
       currentFilePath = result.path;
+      currentDirPath = result.path.replace(/[/\\][^/\\]+$/, '');
       TabManager.setActiveDirty(false);
-      TabManager.renameTab(TabManager.getActiveTabId(), result.name);
+      TabManager.renameTab(TabManager.getActiveTabId(), result.name, result.path);
     }
   }
 
@@ -167,14 +190,14 @@ var DesktopBridge = (() => {
     // Add styles
     var style = document.createElement('style');
     style.textContent =
-      '.context-menu { position: fixed; background: var(--bg-primary, #fff); border: 1px solid var(--border-color, #e0e0e0); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px 0; z-index: 10000; min-width: 200px; display: none; }' +
-      '.context-menu-item { display: flex; align-items: center; padding: 8px 16px; cursor: pointer; font-size: 13px; color: var(--text-primary, #333); transition: background 0.15s; }' +
+      '.context-menu { position: fixed; background: var(--bg-primary, #fff); border: 1px solid var(--border-color, #e0e0e0); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 3px 0; z-index: 10000; min-width: 200px; max-height: 80vh; overflow-y: auto; display: none; }' +
+      '.context-menu-item { display: flex; align-items: center; padding: 4px 14px; cursor: pointer; font-size: 12px; color: var(--text-primary, #333); transition: background 0.15s; line-height: 1.4; }' +
       '.context-menu-item:hover { background: var(--bg-hover, #f5f5f5); }' +
       '.context-menu-item.disabled { color: var(--text-secondary, #999); cursor: default; opacity: 0.5; }' +
       '.context-menu-item.disabled:hover { background: transparent; }' +
-      '.context-menu-item .icon { margin-right: 10px; font-size: 14px; width: 18px; text-align: center; }' +
+      '.context-menu-item .icon { margin-right: 8px; font-size: 13px; width: 16px; text-align: center; }' +
       '.context-menu-item .shortcut { margin-left: auto; font-size: 11px; color: var(--text-secondary, #999); }' +
-      '.context-menu-separator { height: 1px; background: var(--border-color, #e0e0e0); margin: 4px 0; }' +
+      '.context-menu-separator { height: 1px; background: var(--border-color, #e0e0e0); margin: 2px 0; }' +
       '.context-menu-item.danger { color: #e74c3c; }' +
       '.context-menu-item.danger:hover { background: #fdf2f2; }';
     document.head.appendChild(style);
@@ -196,15 +219,29 @@ var DesktopBridge = (() => {
   }
 
   function initEditorContextMenu() {
-    // Wait for CodeMirror to be ready
-    setTimeout(function() {
+    // Bind context menu to CodeMirror when ready
+    function bindContextMenu() {
       var editorElement = document.querySelector('.CodeMirror');
-      if (editorElement) {
+      if (editorElement && !editorElement._contextMenuBound) {
+        editorElement._contextMenuBound = true;
         editorElement.addEventListener('contextmenu', function(e) {
           showEditorContextMenu(e);
         });
+        return true;
       }
-    }, 500);
+      return false;
+    }
+
+    // Try immediately, then retry with intervals
+    if (!bindContextMenu()) {
+      var retryCount = 0;
+      var retryTimer = setInterval(function() {
+        retryCount++;
+        if (bindContextMenu() || retryCount > 20) {
+          clearInterval(retryTimer);
+        }
+      }, 200);
+    }
   }
 
   function showContextMenu(e, itemPath, itemType) {
@@ -296,20 +333,24 @@ var DesktopBridge = (() => {
     contextMenu.innerHTML = html;
     contextMenu.style.display = 'block';
 
-    // Position menu
-    var x = e.clientX;
-    var y = e.clientY;
+    // Position menu - account for page zoom
+    var zoom = parseFloat(document.body.style.zoom) || 1;
+    var x = e.clientX / zoom;
+    var y = e.clientY / zoom;
     var menuWidth = contextMenu.offsetWidth;
     var menuHeight = contextMenu.offsetHeight;
-    var windowWidth = window.innerWidth;
-    var windowHeight = window.innerHeight;
+    var viewWidth = window.innerWidth / zoom;
+    var viewHeight = window.innerHeight / zoom;
 
-    if (x + menuWidth > windowWidth) {
-      x = windowWidth - menuWidth - 10;
+    // Ensure menu stays fully within viewport
+    if (x + menuWidth > viewWidth - 8) {
+      x = viewWidth - menuWidth - 8;
     }
-    if (y + menuHeight > windowHeight) {
-      y = windowHeight - menuHeight - 10;
+    if (x < 8) x = 8;
+    if (y + menuHeight > viewHeight - 8) {
+      y = y - menuHeight;
     }
+    if (y < 8) y = 8;
 
     contextMenu.style.left = x + 'px';
     contextMenu.style.top = y + 'px';
@@ -345,15 +386,16 @@ var DesktopBridge = (() => {
     var selection = cm.getSelection();
     if (!selection) return;
 
-    // Open search with selected text
-    cm.execCommand('find');
+    // Open custom find dialog with selected text pre-filled
+    App.exec('find');
     setTimeout(function() {
-      var searchField = document.querySelector('.CodeMirror-search-field');
-      if (searchField) {
-        searchField.value = selection;
-        searchField.dispatchEvent(new Event('input'));
+      var findInput = document.getElementById('findInput');
+      if (findInput) {
+        findInput.value = selection;
+        findInput.focus();
+        findInput.select();
       }
-    }, 100);
+    }, 150);
   }
 
   function insertTimestamp() {

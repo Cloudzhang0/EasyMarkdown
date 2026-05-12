@@ -191,3 +191,57 @@ body {
   background: var(--accent);
   color: #fff;
 }
+
+/* Fullscreen Preview Mode */
+body.fullscreen-preview .menu-bar,
+body.fullscreen-preview .toolbar,
+body.fullscreen-preview .tab-bar,
+body.fullscreen-preview .status-bar,
+body.fullscreen-preview .editor-panel,
+body.fullscreen-preview .panel-resizer {
+  display: none !important;
+}
+
+body.fullscreen-preview .main-content {
+  flex: 1;
+}
+
+body.fullscreen-preview .preview-panel {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Find Dialog */
+.find-dialog { padding: 4px 0; }
+.find-row { margin-bottom: 8px; }
+.find-row label { display: block; font-size: var(--font-size-sm); color: var(--text-secondary); margin-bottom: 4px; }
+.find-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  outline: none;
+  box-sizing: border-box;
+}
+.find-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-bg); }
+.find-options { display: flex; gap: 16px; margin: 8px 0; }
+.find-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.find-checkbox input { margin: 0; cursor: pointer; }
+.find-status {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  min-height: 18px;
+  padding: 2px 0;
+}

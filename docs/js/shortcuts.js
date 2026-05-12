@@ -6,6 +6,14 @@ var Shortcuts = (() => {
 
   function init() {
     document.addEventListener('keydown', handleKeydown);
+    // Ctrl+滚轮 - 页面缩放
+    document.addEventListener('wheel', function(e) {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) App.exec('pageZoomIn');
+        else App.exec('pageZoomOut');
+      }
+    }, { passive: false });
   }
 
   function register(key, action, description) {
@@ -14,6 +22,20 @@ var Shortcuts = (() => {
 
   function handleKeydown(e) {
     const isCtrl = e.ctrlKey || e.metaKey;
+
+    // ESC - Exit fullscreen preview
+    if (e.key === 'Escape' && document.body.classList.contains('fullscreen-preview')) {
+      e.preventDefault();
+      App.exec('fullscreenPreview');
+      return;
+    }
+
+    // F11 - Toggle Full Screen Preview
+    if (e.key === 'F11') {
+      e.preventDefault();
+      App.exec('fullscreenPreview');
+      return;
+    }
 
     // Ctrl+S - Save
     if (isCtrl && e.key === 's') {
@@ -51,6 +73,12 @@ var Shortcuts = (() => {
     if (isCtrl && e.shiftKey && e.key === 'P') {
       e.preventDefault();
       App.exec('togglePreview');
+      return;
+    }
+    // Ctrl+Shift+F - Full Screen Preview
+    if (isCtrl && e.shiftKey && e.key === 'F') {
+      e.preventDefault();
+      App.exec('fullscreenPreview');
       return;
     }
     // Ctrl+B - Bold
@@ -101,20 +129,20 @@ var Shortcuts = (() => {
       App.exec('orderedList');
       return;
     }
-    // Ctrl+= / Ctrl+- / Ctrl+0 - Zoom
+    // Ctrl+= / Ctrl+- / Ctrl+0 - Page Zoom
     if (isCtrl && (e.key === '=' || e.key === '+')) {
       e.preventDefault();
-      App.exec('zoomIn');
+      App.exec('pageZoomIn');
       return;
     }
     if (isCtrl && e.key === '-') {
       e.preventDefault();
-      App.exec('zoomOut');
+      App.exec('pageZoomOut');
       return;
     }
     if (isCtrl && e.key === '0') {
       e.preventDefault();
-      App.exec('resetZoom');
+      App.exec('pageZoomReset');
       return;
     }
   }
@@ -137,9 +165,11 @@ var Shortcuts = (() => {
       { action: 'unorderedList', keys: ['Ctrl', 'Shift', 'U'], macKeys: ['⌘', 'Shift', 'U'] },
       { action: 'orderedList', keys: ['Ctrl', 'Shift', 'O'], macKeys: ['⌘', 'Shift', 'O'] },
       { action: 'togglePreview', keys: ['Ctrl', 'Shift', 'P'], macKeys: ['⌘', 'Shift', 'P'] },
-      { action: 'zoomIn', keys: ['Ctrl', '+'], macKeys: ['⌘', '+'] },
-      { action: 'zoomOut', keys: ['Ctrl', '-'], macKeys: ['⌘', '-'] },
-      { action: 'resetZoom', keys: ['Ctrl', '0'], macKeys: ['⌘', '0'] },
+      { action: 'fullscreenPreview', keys: ['Ctrl', 'Shift', 'F'], macKeys: ['⌘', 'Shift', 'F'] },
+      { action: 'fullscreenPreview', keys: ['F11'], macKeys: ['F11'] },
+      { action: 'pageZoomIn', keys: ['Ctrl', '+'], macKeys: ['⌘', '+'] },
+      { action: 'pageZoomOut', keys: ['Ctrl', '-'], macKeys: ['⌘', '-'] },
+      { action: 'pageZoomReset', keys: ['Ctrl', '0'], macKeys: ['⌘', '0'] },
     ];
   }
 
