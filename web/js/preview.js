@@ -11,11 +11,9 @@ var Preview = (() => {
   function init() {
     previewEl = document.getElementById('previewContent');
 
-    // Diagnostic: check library availability
-    console.log('[Preview] Mermaid loaded:', typeof mermaid !== 'undefined');
-    console.log('[Preview] KaTeX loaded:', typeof katex !== 'undefined');
-    console.log('[Preview] marked loaded:', typeof marked !== 'undefined');
-    console.log('[Preview] DOMPurify loaded:', typeof DOMPurify !== 'undefined');
+    // Check library availability
+    if (typeof mermaid === 'undefined') console.warn('[Preview] Mermaid not loaded');
+    if (typeof katex === 'undefined') console.warn('[Preview] KaTeX not loaded');
 
     // Configure marked (highlight applied post-render since marked v12 deprecated highlight option)
     marked.setOptions({
@@ -24,10 +22,7 @@ var Preview = (() => {
     });
 
     // Initialize mermaid
-    if (typeof mermaid === 'undefined') {
-      console.error('[Preview] Mermaid library NOT loaded!');
-      mermaidReady = false;
-    } else {
+    if (typeof mermaid !== 'undefined') {
       try {
         mermaid.initialize({
           startOnLoad: false,
@@ -35,7 +30,6 @@ var Preview = (() => {
           securityLevel: 'loose',
         });
         mermaidReady = true;
-        console.log('[Preview] Mermaid initialized OK');
       } catch (e) {
         console.error('[Preview] Mermaid init error:', e);
         mermaidReady = false;
@@ -62,10 +56,6 @@ var Preview = (() => {
     // Render markdown to HTML
     let html = marked.parse(processed);
 
-    // Diagnostic: check if marked generated mermaid code blocks
-    var mermaidAfterMarked = (html.match(/language-mermaid/g) || []).length;
-    console.log('[Preview] After marked.parse - language-mermaid found:', mermaidAfterMarked);
-
     // Sanitize HTML (preserve data-math for KaTeX, SVG attrs for Mermaid)
     // ALLOW_UNKNOWN_PROTOCOLS: allow file:// and relative image paths
     html = DOMPurify.sanitize(html, {
@@ -73,10 +63,6 @@ var Preview = (() => {
       ADD_ATTR: ['viewBox', 'd', 'fill', 'stroke', 'stroke-width', 'cx', 'cy', 'r', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'points', 'transform', 'text-anchor', 'dominant-baseline', 'marker-end', 'marker-start', 'refX', 'refY', 'orient', 'markerWidth', 'markerHeight', 'data-math', 'class', 'src'],
       ALLOW_UNKNOWN_PROTOCOLS: true,
     });
-
-    // Diagnostic: check if DOMPurify preserved mermaid code blocks
-    var mermaidAfterPurify = (html.match(/language-mermaid/g) || []).length;
-    console.log('[Preview] After DOMPurify - language-mermaid found:', mermaidAfterPurify);
 
     previewEl.innerHTML = html;
 
@@ -148,13 +134,9 @@ var Preview = (() => {
   }
 
   async function renderMermaid() {
-    if (!mermaidReady) {
-      console.warn('[Preview] Mermaid not ready, rendering skipped. Found code.language-mermaid:', previewEl.querySelectorAll('code.language-mermaid').length);
-      return;
-    }
+    if (!mermaidReady) return;
 
     const mermaidEls = previewEl.querySelectorAll('code.language-mermaid');
-    console.log('[Preview] Found', mermaidEls.length, 'mermaid code blocks');
     for (const el of mermaidEls) {
       const pre = el.parentElement;
       const container = document.createElement('div');
@@ -164,11 +146,9 @@ var Preview = (() => {
       try {
         mermaidCounter++;
         const id = 'mermaid-' + mermaidCounter;
-        console.log('[Preview] Rendering mermaid diagram, id:', id, 'content:', el.textContent.substring(0, 100));
         const { svg } = await mermaid.render(id, el.textContent);
         container.innerHTML = svg;
         pre.replaceWith(container);
-        console.log('[Preview] Mermaid diagram rendered OK');
       } catch (e) {
         console.error('[Preview] Mermaid render error:', e);
         container.textContent = el.textContent;
