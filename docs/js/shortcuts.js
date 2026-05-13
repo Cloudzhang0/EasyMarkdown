@@ -99,8 +99,9 @@ var Shortcuts = (() => {
       App.exec('link');
       return;
     }
-    // Ctrl+Shift+I - Image
-    if (isCtrl && e.shiftKey && e.key === 'I') {
+    // Ctrl+Shift+I - Developer Tools (browser built-in, do NOT override)
+    // Ctrl+Shift+G - Image
+    if (isCtrl && e.shiftKey && e.key === 'G') {
       e.preventDefault();
       App.exec('image');
       return;
@@ -160,7 +161,7 @@ var Shortcuts = (() => {
       { action: 'italic', keys: ['Ctrl', 'I'], macKeys: ['⌘', 'I'] },
       { action: 'strikethrough', keys: ['Ctrl', 'Shift', 'S'], macKeys: ['⌘', 'Shift', 'S'] },
       { action: 'link', keys: ['Ctrl', 'K'], macKeys: ['⌘', 'K'] },
-      { action: 'image', keys: ['Ctrl', 'Shift', 'I'], macKeys: ['⌘', 'Shift', 'I'] },
+      { action: 'image', keys: ['Ctrl', 'Shift', 'G'], macKeys: ['⌘', 'Shift', 'G'] },
       { action: 'blockquote', keys: ['Ctrl', 'Shift', 'Q'], macKeys: ['⌘', 'Shift', 'Q'] },
       { action: 'unorderedList', keys: ['Ctrl', 'Shift', 'U'], macKeys: ['⌘', 'Shift', 'U'] },
       { action: 'orderedList', keys: ['Ctrl', 'Shift', 'O'], macKeys: ['⌘', 'Shift', 'O'] },

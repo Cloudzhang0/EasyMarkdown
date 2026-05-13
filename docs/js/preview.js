@@ -11,6 +11,12 @@ var Preview = (() => {
   function init() {
     previewEl = document.getElementById('previewContent');
 
+    // Diagnostic: check library availability
+    console.log('[Preview] Mermaid loaded:', typeof mermaid !== 'undefined');
+    console.log('[Preview] KaTeX loaded:', typeof katex !== 'undefined');
+    console.log('[Preview] marked loaded:', typeof marked !== 'undefined');
+    console.log('[Preview] DOMPurify loaded:', typeof DOMPurify !== 'undefined');
+
     // Configure marked (highlight applied post-render since marked v12 deprecated highlight option)
     marked.setOptions({
       gfm: true,
@@ -18,15 +24,22 @@ var Preview = (() => {
     });
 
     // Initialize mermaid
-    try {
-      mermaid.initialize({
-        startOnLoad: false,
-        theme: document.body.classList.contains('theme-dark') ? 'dark' : 'default',
-        securityLevel: 'loose',
-      });
-      mermaidReady = true;
-    } catch (e) {
+    if (typeof mermaid === 'undefined') {
+      console.error('[Preview] Mermaid library NOT loaded!');
       mermaidReady = false;
+    } else {
+      try {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: document.body.classList.contains('theme-dark') ? 'dark' : 'default',
+          securityLevel: 'loose',
+        });
+        mermaidReady = true;
+        console.log('[Preview] Mermaid initialized OK');
+      } catch (e) {
+        console.error('[Preview] Mermaid init error:', e);
+        mermaidReady = false;
+      }
     }
   }
 
@@ -98,7 +111,10 @@ var Preview = (() => {
   }
 
   function renderMath() {
-    if (typeof katex === 'undefined') return;
+    if (typeof katex === 'undefined') {
+      console.error('[Preview] KaTeX not loaded, math rendering skipped');
+      return;
+    }
 
     // Block math
     previewEl.querySelectorAll('.katex-display-placeholder').forEach(el => {
@@ -124,9 +140,13 @@ var Preview = (() => {
   }
 
   async function renderMermaid() {
-    if (!mermaidReady) return;
+    if (!mermaidReady) {
+      console.warn('[Preview] Mermaid not ready, rendering skipped. Found code.language-mermaid:', previewEl.querySelectorAll('code.language-mermaid').length);
+      return;
+    }
 
     const mermaidEls = previewEl.querySelectorAll('code.language-mermaid');
+    console.log('[Preview] Found', mermaidEls.length, 'mermaid code blocks');
     for (const el of mermaidEls) {
       const pre = el.parentElement;
       const container = document.createElement('div');
@@ -136,10 +156,13 @@ var Preview = (() => {
       try {
         mermaidCounter++;
         const id = 'mermaid-' + mermaidCounter;
+        console.log('[Preview] Rendering mermaid diagram, id:', id, 'content:', el.textContent.substring(0, 100));
         const { svg } = await mermaid.render(id, el.textContent);
         container.innerHTML = svg;
         pre.replaceWith(container);
+        console.log('[Preview] Mermaid diagram rendered OK');
       } catch (e) {
+        console.error('[Preview] Mermaid render error:', e);
         container.textContent = el.textContent;
         container.style.color = 'var(--danger)';
         pre.replaceWith(container);

@@ -74,7 +74,7 @@
 | Ctrl+B | 粗体 |
 | Ctrl+I | 斜体 |
 | Ctrl+K | 插入链接 |
-| Ctrl+Shift+I | 插入图片 |
+| Ctrl+Shift+G | 插入图片 |
 | Ctrl+Shift+S | 删除线 |
 | Ctrl+Shift+Q | 引用块 |
 | Ctrl+Shift+U | 无序列表 |
@@ -187,6 +187,8 @@ npm run build:linux  # Linux
 - 多标签编辑
 - 12 种语言国际化
 - 桌面版（Electron）：文件夹侧边栏、图片管理、右键菜单、语音输入
+
+如果这个项目对你有帮助，欢迎点个 ⭐ Star 支持一下～
 
 ## 许可证
 
