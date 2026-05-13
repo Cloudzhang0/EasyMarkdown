@@ -113,71 +113,11 @@ var DesktopBridge = (() => {
 
   function showFolderTree(folderPath, tree) {
     currentDirPath = folderPath;
-    var sidebar = document.getElementById('folderSidebar');
 
-    if (!sidebar) {
-      sidebar = document.createElement('div');
-      sidebar.id = 'folderSidebar';
-      sidebar.className = 'folder-sidebar';
-
-      var mainContent = document.getElementById('mainContent');
-      mainContent.parentNode.insertBefore(sidebar, mainContent);
-
-      var style = document.createElement('style');
-      style.textContent =
-        '.folder-sidebar { width: 240px; min-width: 200px; background: var(--bg-secondary); border-right: 1px solid var(--border-color); overflow-y: auto; flex-shrink: 0; display: none; }' +
-        '.folder-sidebar.visible { display: block; }' +
-        '.folder-sidebar-header { padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); text-transform: uppercase; letter-spacing: 0.5px; }' +
-        '.tree-item { display: flex; align-items: center; padding: 4px 12px; cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
-        '.tree-item:hover { background: var(--bg-hover); }' +
-        '.tree-item.active { background: var(--accent-bg); color: var(--accent); }' +
-        '.tree-item .icon { margin-right: 6px; font-size: 14px; flex-shrink: 0; }' +
-        '.tree-item.directory .icon { color: var(--warning); }' +
-        '.tree-item.file .icon { color: var(--accent); }' +
-        '.tree-children { padding-left: 16px; }' +
-        '.tree-children.collapsed { display: none; }';
-      document.head.appendChild(style);
+    // Delegate tree rendering to FolderTree module (auto-pins when tree is loaded)
+    if (typeof FolderTree !== 'undefined' && FolderTree.loadTree) {
+      FolderTree.loadTree(folderPath, tree);
     }
-
-    sidebar.innerHTML = '<div class="folder-sidebar-header">' + folderPath.split(/[/\\]/).pop() + '</div>';
-    sidebar.classList.add('visible');
-
-    function renderTree(items, container) {
-      items.forEach(function(item) {
-        var el = document.createElement('div');
-        el.className = 'tree-item ' + item.type;
-
-        if (item.type === 'directory') {
-          el.innerHTML = '<span class="icon">&#128193;</span>' + item.name;
-          var children = document.createElement('div');
-          children.className = 'tree-children';
-          renderTree(item.children || [], children);
-          el.addEventListener('click', function() {
-            children.classList.toggle('collapsed');
-          });
-          // Right-click context menu for directories
-          el.addEventListener('contextmenu', function(e) {
-            showContextMenu(e, item.path, 'directory');
-          });
-          container.appendChild(el);
-          container.appendChild(children);
-        } else {
-          el.innerHTML = '<span class="icon">&#128196;</span>' + item.name;
-          el.addEventListener('click', async function() {
-            await window.electronAPI.openFileByPath(item.path);
-            container.querySelectorAll('.tree-item.active').forEach(function(e) { e.classList.remove('active'); });
-            el.classList.add('active');
-          });
-          // Right-click context menu for files
-          el.addEventListener('contextmenu', function(e) {
-            showContextMenu(e, item.path, 'file');
-          });
-          container.appendChild(el);
-        }
-      });
-    }
-
-    renderTree(tree, sidebar);
   }
 
   function initContextMenu() {
@@ -244,7 +184,7 @@ var DesktopBridge = (() => {
     }
   }
 
-  function showContextMenu(e, itemPath, itemType) {
+  function showTreeContextMenu(e, itemPath, itemType) {
     e.preventDefault();
     e.stopPropagation();
 
@@ -632,5 +572,5 @@ var DesktopBridge = (() => {
   function getCurrentFilePath() { return currentFilePath; }
   function getCurrentDirPath() { return currentDirPath; }
 
-  return { init: init, isActive: isActive, getCurrentFilePath: getCurrentFilePath, getCurrentDirPath: getCurrentDirPath };
+  return { init: init, isActive: isActive, getCurrentFilePath: getCurrentFilePath, getCurrentDirPath: getCurrentDirPath, showTreeContextMenu: showTreeContextMenu };
 })();

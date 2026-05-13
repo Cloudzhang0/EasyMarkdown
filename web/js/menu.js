@@ -63,6 +63,37 @@ var Menu = (() => {
         App.onLanguageChange();
       });
     }
+
+    // Append shortcut keys to menu items
+    appendShortcutKeys();
+  }
+
+  function appendShortcutKeys() {
+    var isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    var shortcuts = Shortcuts.getAll();
+
+    // Build action → shortcutText mapping
+    var map = {};
+    shortcuts.forEach(function(s) {
+      var keys = isMac ? (s.macKeys || s.keys) : s.keys;
+      if (keys && !map[s.action]) {
+        map[s.action] = keys.join('+');
+      }
+    });
+
+    // Append shortcut labels to menu command buttons
+    document.querySelectorAll('.menu-command').forEach(function(btn) {
+      var action = btn.getAttribute('data-action');
+      if (!action || !map[action]) return;
+
+      // Avoid appending twice
+      if (btn.querySelector('.menu-shortcut')) return;
+
+      var shortcutEl = document.createElement('span');
+      shortcutEl.className = 'menu-shortcut';
+      shortcutEl.textContent = map[action];
+      btn.appendChild(shortcutEl);
+    });
   }
 
   function closeAll() {
@@ -99,5 +130,5 @@ var Menu = (() => {
     });
   }
 
-  return { init, closeAll, updateRecentFiles };
+  return { init, closeAll, updateRecentFiles, appendShortcutKeys };
 })();

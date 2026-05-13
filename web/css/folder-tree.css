@@ -1,0 +1,197 @@
+/* Folder Sidebar — auto-hide, slides out on left-edge hover */
+.folder-sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 240px;
+  min-width: 240px;
+  max-width: 400px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+  z-index: 50;
+  transform: translateX(calc(-100% + 6px));
+  transition: transform 0.2s ease;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+}
+
+/* Peek edge — subtle hint stripe */
+.folder-sidebar::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--border-color);
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.folder-sidebar:hover::after {
+  opacity: 0;
+}
+
+/* Pinned state — stays open, resizer is functional */
+.folder-sidebar.pinned {
+  transform: translateX(0);
+  position: relative;
+  box-shadow: none;
+}
+
+.folder-sidebar.pinned::after {
+  display: none;
+}
+
+/* Hidden completely (menu toggle) */
+.folder-sidebar.hidden {
+  transform: translateX(-100%);
+}
+
+.folder-sidebar.hidden::after {
+  opacity: 0;
+}
+
+/* When sidebar is shown (hover or pinned), hide the peek stripe */
+.folder-sidebar:not(.hidden):not(.pinned):hover,
+.folder-sidebar.expanded {
+  transform: translateX(0);
+}
+
+.folder-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.folder-sidebar-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.folder-sidebar-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.folder-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  color: var(--text-secondary);
+}
+
+.folder-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.folder-tree {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0;
+}
+
+/* Tree items */
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px 4px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s;
+  user-select: none;
+}
+
+.tree-item:hover {
+  background: var(--bg-hover);
+}
+
+.tree-item.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.tree-item .tree-icon {
+  margin-right: 6px;
+  font-size: 14px;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+}
+
+.tree-item .tree-arrow {
+  width: 16px;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  transition: transform 0.15s;
+  text-align: center;
+}
+
+.tree-item .tree-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.tree-item.directory .tree-icon {
+  color: var(--warning);
+}
+
+.tree-item.file .tree-icon {
+  color: var(--accent);
+}
+
+.tree-children.collapsed {
+  display: none;
+}
+
+/* Sidebar resizer — only visible when pinned */
+.sidebar-resizer {
+  width: 4px;
+  cursor: col-resize;
+  background: var(--border-color);
+  flex-shrink: 0;
+  transition: background 0.2s;
+  display: none;
+}
+
+.sidebar-resizer.visible {
+  display: block;
+}
+
+.sidebar-resizer:hover,
+.sidebar-resizer.active {
+  background: var(--accent);
+}
+
+/* Placeholder for web version */
+.folder-placeholder {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.folder-placeholder a {
+  color: var(--accent);
+  font-weight: 500;
+}

@@ -84,13 +84,13 @@
 
 .menu-command:hover { background: var(--menu-hover); }
 
-.menu-command[data-action="undo"],
-.menu-command[data-action="redo"],
-.menu-command[data-action="cut"],
-.menu-command[data-action="copy"],
-.menu-command[data-action="paste"],
-.menu-command[data-action="selectAll"] {
-  /* These get keyboard shortcuts appended via JS */
+.menu-shortcut {
+  margin-left: 24px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
 }
 
 .menu-separator {

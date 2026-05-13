@@ -13,10 +13,26 @@
   user-select: none;
 }
 
-.status-left, .status-right {
+.status-left, .status-center, .status-right {
   display: flex;
   align-items: center;
   gap: 0;
+}
+
+.status-center {
+  flex: 1;
+  justify-content: center;
+}
+
+.status-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.status-link:hover {
+  text-decoration: underline;
 }
 
 .status-item {

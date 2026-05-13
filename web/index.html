@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="css/toolbar.css">
   <link rel="stylesheet" href="css/menu.css">
   <link rel="stylesheet" href="css/statusbar.css">
+  <link rel="stylesheet" href="css/folder-tree.css">
   <link rel="stylesheet" href="css/help.css">
   <link rel="stylesheet" href="css/print.css" media="print">
 </head>
@@ -78,6 +79,7 @@
         <span class="menu-label" data-i18n="menu.view">View</span>
         <div class="menu-dropdown" id="menu-view">
           <button class="menu-command" data-action="toggleLineNumbers" data-i18n="menu.toggleLineNumbers">Toggle Line Numbers</button>
+          <button class="menu-command" data-action="toggleFolderTree" data-i18n="menu.toggleFolderTree">Toggle Folder Tree</button>
           <button class="menu-command" data-action="fullscreenPreview" data-i18n="menu.fullscreenPreview">Full Screen Preview</button>
           <div class="menu-separator"></div>
           <button class="menu-command" data-action="pageZoomIn" data-i18n="menu.zoomIn">Zoom In</button>
@@ -120,12 +122,6 @@
       <div class="privacy-badge" data-i18n="privacy.local" title="Data stored locally only">Local Only</div>
     </div>
   </header>
-
-  <!-- Desktop prompt bar (web version only) -->
-  <div id="desktopPromptBar" style="background: #e8f0fe; padding: 8px 16px; text-align: center; font-size: 14px; border-bottom: 1px solid #ddd;">
-    💡 <span data-i18n="desktopPrompt.text">提示：这是网页版，文件保存在浏览器中。需要保存到本地电脑？</span>
-    <a href="https://github.com/cloudzhang0/EasyMarkdown/releases" target="_blank" style="font-weight: bold;" data-i18n="desktopPrompt.link">下载桌面版</a>
-  </div>
 
   <!-- Formatting Toolbar -->
   <div class="toolbar" id="toolbar">
@@ -200,17 +196,39 @@
   <div class="tab-bar" id="tabBar"></div>
 
   <!-- Main Content Area -->
-  <main class="main-content" id="mainContent">
-    <div class="editor-panel" id="editorPanel">
-      <textarea id="editorTextarea"></textarea>
-    </div>
-    <div class="panel-resizer" id="panelResizer">
-      <div class="resizer-handle"></div>
-    </div>
-    <div class="preview-panel" id="previewPanel">
-      <div class="preview-content markdown-body" id="previewContent"></div>
-    </div>
-  </main>
+  <div class="body-content" id="bodyContent">
+    <!-- Folder Sidebar -->
+    <aside class="folder-sidebar" id="folderSidebar">
+      <div class="folder-sidebar-header">
+        <span class="folder-sidebar-title" data-i18n="folder.explorer">Outline</span>
+        <div class="folder-sidebar-actions">
+          <button class="folder-btn" id="folderOpenBtn" title="Open Folder">📂</button>
+          <button class="folder-btn" id="folderCollapseAllBtn" title="Collapse All">⊟</button>
+        </div>
+      </div>
+      <div class="folder-tree" id="folderTree">
+        <div class="folder-placeholder" id="folderPlaceholder">
+          <p data-i18n="folder.webPlaceholder">文件夹树仅在桌面版中可用</p>
+          <a href="https://github.com/cloudzhang0/EasyMarkdown/releases" target="_blank" data-i18n="desktopPrompt.link">下载桌面版</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Sidebar Resizer -->
+    <div class="sidebar-resizer" id="sidebarResizer"></div>
+
+    <main class="main-content" id="mainContent">
+      <div class="editor-panel" id="editorPanel">
+        <textarea id="editorTextarea"></textarea>
+      </div>
+      <div class="panel-resizer" id="panelResizer">
+        <div class="resizer-handle"></div>
+      </div>
+      <div class="preview-panel" id="previewPanel">
+        <div class="preview-content markdown-body" id="previewContent"></div>
+      </div>
+    </main>
+  </div>
 
   <!-- Status Bar -->
   <footer class="status-bar" id="statusBar">
@@ -218,6 +236,10 @@
       <span class="status-item" id="statusFileName" data-i18n="status.untitled">Untitled</span>
       <span class="status-separator">|</span>
       <span class="status-item" id="statusSaveState" data-i18n="status.saved">Saved</span>
+    </div>
+    <div class="status-center" id="desktopPromptStatus">
+      <span class="status-item">💡 <span data-i18n="desktopPrompt.text">提示：这是网页版，文件保存在浏览器中。需要保存到本地电脑？</span>
+      <a href="https://github.com/cloudzhang0/EasyMarkdown/releases" target="_blank" class="status-link" data-i18n="desktopPrompt.link">下载桌面版</a></span>
     </div>
     <div class="status-right">
       <span class="status-item" id="statusWordCount"></span>
@@ -291,6 +313,7 @@
   <script src="js/file-manager.js"></script>
   <script src="js/statusbar.js"></script>
   <script src="js/tab-manager.js"></script>
+  <script src="js/folder-tree.js"></script>
   <script src="js/shortcuts.js"></script>
   <script src="js/help.js"></script>
   <script src="js/desktop-bridge.js"></script>

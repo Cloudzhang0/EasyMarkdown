@@ -23,7 +23,7 @@ var I18n = (() => {
       'menu.undo': '撤销', 'menu.redo': '重做', 'menu.cut': '剪切',
       'menu.copy': '复制', 'menu.paste': '粘贴', 'menu.selectAll': '全选',
       'menu.find': '查找', 'menu.replace': '查找替换', 'menu.togglePreview': '隐藏预览',
-      'menu.toggleLineNumbers': '显示/隐藏行号', 'menu.fullscreenPreview': '全屏预览',
+      'menu.toggleLineNumbers': '显示/隐藏行号', 'menu.toggleFolderTree': '显示/隐藏文件夹树', 'menu.fullscreenPreview': '全屏预览',
       'menu.zoomIn': '放大', 'menu.zoomOut': '缩小',
       'menu.resetZoom': '重置缩放', 'menu.toggleTheme': '切换主题',
       'menu.gettingStarted': 'Markdown 入门用法', 'menu.cheatsheet': 'Markdown 语法速查表',
@@ -50,6 +50,7 @@ var I18n = (() => {
       'dialog.unsavedChanges': '文件有未保存的更改，确定关闭吗？',
       'tab.untitled': '未命名',
       'desktopPrompt.text': '提示：这是网页版，文件保存在浏览器中。需要保存到本地电脑？', 'desktopPrompt.link': '下载桌面版',
+      'folder.explorer': '大纲', 'folder.webPlaceholder': '在编辑器中输入标题（# ## ###）将自动生成文档大纲',
     },
     'en-US': {
       'menu.file': 'File', 'menu.edit': 'Edit', 'menu.view': 'View', 'menu.help': 'Help',
@@ -59,7 +60,7 @@ var I18n = (() => {
       'menu.undo': 'Undo', 'menu.redo': 'Redo', 'menu.cut': 'Cut',
       'menu.copy': 'Copy', 'menu.paste': 'Paste', 'menu.selectAll': 'Select All',
       'menu.find': 'Find', 'menu.replace': 'Find & Replace', 'menu.togglePreview': 'Toggle Preview',
-      'menu.toggleLineNumbers': 'Toggle Line Numbers', 'menu.fullscreenPreview': 'Full Screen Preview',
+      'menu.toggleLineNumbers': 'Toggle Line Numbers', 'menu.toggleFolderTree': 'Toggle Folder Tree', 'menu.fullscreenPreview': 'Full Screen Preview',
       'menu.zoomIn': 'Zoom In', 'menu.zoomOut': 'Zoom Out',
       'menu.resetZoom': 'Reset Zoom', 'menu.toggleTheme': 'Toggle Theme',
       'menu.gettingStarted': 'Getting Started', 'menu.cheatsheet': 'Markdown Cheatsheet',
@@ -86,6 +87,7 @@ var I18n = (() => {
       'dialog.unsavedChanges': 'This file has unsaved changes. Close anyway?',
       'tab.untitled': 'Untitled',
       'desktopPrompt.text': 'Tip: This is the web version. Files are saved in your browser. Want to save to your computer?', 'desktopPrompt.link': 'Download Desktop App',
+      'folder.explorer': 'Outline', 'folder.webPlaceholder': 'Document headings will appear here as you type',
     }
   };
 

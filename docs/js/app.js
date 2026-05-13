@@ -151,14 +151,17 @@ var App = (() => {
     try { Help.init(); } catch(e) { console.error('Help init error:', e); }
     try { DesktopBridge.init(); } catch(e) { console.error('DesktopBridge init error:', e); }
 
-    // Hide desktop prompt bar when running in Electron
+    // Hide desktop prompt in status bar when running in Electron
     if (window.electronAPI) {
-      var promptBar = document.getElementById('desktopPromptBar');
-      if (promptBar) promptBar.style.display = 'none';
+      var promptStatus = document.getElementById('desktopPromptStatus');
+      if (promptStatus) promptStatus.style.display = 'none';
     }
 
     // Apply translations
     try { I18n.applyToDOM(); } catch(e) { console.error('I18n applyToDOM error:', e); }
+
+    // Append shortcut keys to menu (must run after I18n.applyToDOM which replaces textContent)
+    try { Menu.appendShortcutKeys(); } catch(e) { console.error('Menu appendShortcutKeys error:', e); }
 
     // Set initial file name
     try { StatusBar.setFileName(FileManager.getFileName()); } catch(e) {}
@@ -230,11 +233,16 @@ var App = (() => {
       Preview.update(content);
       StatusBar.updateStats(content);
       TabManager.updateCurrentContent();
+      // Update document outline in sidebar (web mode)
+      if (typeof FolderTree !== 'undefined' && FolderTree.renderOutline) {
+        FolderTree.renderOutline(content);
+      }
     } catch(e) {}
   }
 
   function onLanguageChange() {
     try { I18n.applyToDOM(); } catch(e) {}
+    try { Menu.appendShortcutKeys(); } catch(e) {}
     try { StatusBar.setFileName(FileManager.getFileName()); } catch(e) {}
     try { StatusBar.setSaveState(FileManager.isDocumentDirty() ? 'unsaved' : 'saved'); } catch(e) {}
     try { onContentChange(); } catch(e) {}
@@ -281,6 +289,9 @@ var App = (() => {
 
         // View operations
         case 'toggleLineNumbers': Editor.toggleLineNumbers(); break;
+        case 'toggleFolderTree':
+          if (typeof FolderTree !== 'undefined' && FolderTree.toggle) FolderTree.toggle();
+          break;
         case 'fullscreenPreview': fullscreenPreview(); break;
         case 'pageZoomIn': pageZoomIn(); break;
         case 'pageZoomOut': pageZoomOut(); break;

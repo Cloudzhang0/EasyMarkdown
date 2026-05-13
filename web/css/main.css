@@ -16,11 +16,20 @@ body {
   flex-direction: column;
 }
 
+/* Wrapper for sidebar + main content */
+.body-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
 .main-content {
   flex: 1;
   display: flex;
   overflow: hidden;
   position: relative;
+  min-width: 0;
 }
 
 .main-content.preview-hidden .preview-panel,
@@ -197,9 +206,16 @@ body.fullscreen-preview .menu-bar,
 body.fullscreen-preview .toolbar,
 body.fullscreen-preview .tab-bar,
 body.fullscreen-preview .status-bar,
+body.fullscreen-preview .folder-sidebar,
+body.fullscreen-preview .folder-sidebar.pinned,
+body.fullscreen-preview .sidebar-resizer,
 body.fullscreen-preview .editor-panel,
 body.fullscreen-preview .panel-resizer {
   display: none !important;
+}
+
+body.fullscreen-preview .body-content {
+  flex: 1;
 }
 
 body.fullscreen-preview .main-content {

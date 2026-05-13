@@ -14,16 +14,24 @@
 ### 编辑与预览
 - 实时 Markdown 预览（支持 GFM 语法）
 - 左右分栏编辑，可拖拽调整比例
-- 代码高亮（highlight.js）
+- 代码高亮（highlight.js），编辑器与预览区颜色统一对齐 GitHub 主题
 - Mermaid 图表渲染
 - KaTeX 数学公式
 - 全屏预览模式（Ctrl+Shift+F / ESC 退出）
+
+### 文档大纲（侧边栏）
+- 左侧大纲面板，鼠标移到屏幕左边缘自动滑出，移开自动隐藏
+- 自动解析 Markdown 标题（H1-H6），生成可点击文档大纲树
+- 点击大纲项：编辑器跳转到对应行 + 预览滚动到对应位置
+- 桌面版支持文件夹树浏览（替代大纲）
+- 视图菜单可固定/取消固定侧边栏，固定后可拖拽调整宽度
 
 ### 视图控制
 - 整页缩放（Ctrl+滚轮 / Ctrl+=/-/0，范围 50%-200%）
 - 显示/隐藏行号
 - 明暗主题切换
 - 预览面板显示/隐藏（Ctrl+Shift+P）
+- 侧边栏显示/隐藏（Ctrl+Shift+E）
 
 ### 格式化工具栏
 - 标题（H1-H6）、粗体、斜体、删除线
@@ -46,16 +54,20 @@
 - 语音输入
 - 最近文件记录
 
+### 菜单增强
+- 所有菜单项右侧显示对应快捷键
+- 自动识别 Windows/Mac 系统，显示相应快捷键格式
+
 ### 国际化
 支持 12 种语言：简体中文、繁體中文、English、日本語、한국어、Français、Deutsch、Español、Português、Русский、العربية、हिन्दी
 
 ## 下载安装
 
 ### Windows 安装版
-下载 `EasyMarkdown Setup 1.1.0.exe`，双击运行安装程序，支持自定义安装路径。
+下载 `EasyMarkdown Setup 1.2.0.exe`，双击运行安装程序，支持自定义安装路径。
 
 ### Windows 绿色版（便携版）
-下载 `EasyMarkdown-1.1.0-Portable.exe`，双击直接运行，无需安装，不写注册表。
+下载 `EasyMarkdown-1.2.0-Portable.exe`，双击直接运行，无需安装，不写注册表。
 
 ### 网页版
 直接在浏览器中打开 `web/index.html` 即可使用，或部署到任意静态服务器。
@@ -67,8 +79,13 @@
 | Ctrl+N | 新建文件 |
 | Ctrl+O | 打开文件 |
 | Ctrl+S | 保存 |
+| Ctrl+P | 打印 |
 | Ctrl+Z | 撤销 |
 | Ctrl+Y | 重做 |
+| Ctrl+X | 剪切 |
+| Ctrl+C | 复制 |
+| Ctrl+V | 粘贴 |
+| Ctrl+A | 全选 |
 | Ctrl+F | 查找 |
 | Ctrl+H | 查找替换 |
 | Ctrl+B | 粗体 |
@@ -81,6 +98,7 @@
 | Ctrl+Shift+O | 有序列表 |
 | Ctrl+Shift+P | 隐藏/显示预览 |
 | Ctrl+Shift+F | 全屏预览（ESC 退出） |
+| Ctrl+Shift+E | 固定/取消固定侧边栏 |
 | Ctrl+滚轮 | 缩放页面 |
 | Ctrl+= | 放大 |
 | Ctrl+- | 缩小 |
@@ -107,6 +125,7 @@ EasyMarkdown/
 │   │   ├── main.css       # 全局布局
 │   │   ├── editor.css     # 编辑器样式
 │   │   ├── preview.css    # 预览样式
+│   │   ├── folder-tree.css# 侧边栏样式
 │   │   ├── toolbar.css    # 工具栏样式
 │   │   ├── menu.css       # 菜单样式
 │   │   ├── statusbar.css  # 状态栏样式
@@ -116,6 +135,7 @@ EasyMarkdown/
 │   │   ├── app.js         # 主应用入口
 │   │   ├── editor.js      # 编辑器模块
 │   │   ├── preview.js     # 预览渲染
+│   │   ├── folder-tree.js # 侧边栏大纲/文件夹树
 │   │   ├── menu.js        # 菜单系统
 │   │   ├── toolbar.js     # 工具栏
 │   │   ├── shortcuts.js   # 快捷键
@@ -163,6 +183,37 @@ npm run build:linux  # Linux
 构建产物输出到 `desktop/dist/` 目录。
 
 ## 更新日志
+
+### v1.2.0 (2026-05-13)
+
+**新功能**
+- 文档大纲侧边栏：网页版自动解析 Markdown 标题生成可点击大纲，桌面版支持文件夹树浏览
+- 侧边栏自动隐藏：鼠标移到屏幕左边缘滑出，移开自动隐藏，支持固定/取消固定（Ctrl+Shift+E）
+- 点击大纲项同步跳转：编辑器光标跳转到对应行 + 预览滚动到对应标题
+- 菜单快捷键显示：所有菜单项右侧自动显示对应快捷键，自动识别 Windows/Mac 格式
+- 新增快捷键支持：打印（Ctrl+P）、剪切（Ctrl+X）、复制（Ctrl+C）、粘贴（Ctrl+V）、全选（Ctrl+A）
+
+**改进**
+- 编辑器代码高亮颜色与预览区 GitHub 主题完全对齐（浅色/深色各 21 个 token）
+- 桌面版提示条从菜单栏下方移至状态栏，不影响编辑区域
+- 桌面版文件夹树重构为独立模块，与网页版大纲复用同一侧边栏架构
+- 分割面板支持侧边栏拖拽调整宽度
+
+**文件变更**
+- 新增 `web/css/folder-tree.css` — 侧边栏样式
+- 新增 `web/js/folder-tree.js` — 侧边栏大纲/文件夹树模块
+- 更新 `web/css/editor.css` — 完整 CodeMirror 主题 token 覆盖
+- 更新 `web/js/shortcuts.js` — 新增打印/剪切/复制/粘贴/全选快捷键
+- 更新 `web/js/menu.js` — 菜单项追加快捷键显示
+- 更新 `web/js/splitter.js` — 支持侧边栏+编辑器双分割线拖拽
+- 更新 `web/js/desktop-bridge.js` — 重构使用 FolderTree 模块
+- 更新 `web/js/i18n.js` — 新增大纲/文件夹树翻译键
+- 更新 `web/js/app.js` — 新增 toggleFolderTree action，主题切换刷新
+- 更新 `web/css/main.css` — 新增三栏布局支持
+- 更新 `web/css/menu.css` — 新增菜单快捷键样式
+- 更新 `web/css/statusbar.css` — 新增状态栏居中区域样式
+- 更新 `web/index.html` — 侧边栏 HTML、状态栏提示、菜单按钮
+- 更新 `desktop/package.json` — 版本号 1.2.0
 
 ### v1.1.0 (2026-05-09)
 
