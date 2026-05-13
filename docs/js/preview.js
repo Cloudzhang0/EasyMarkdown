@@ -62,6 +62,10 @@ var Preview = (() => {
     // Render markdown to HTML
     let html = marked.parse(processed);
 
+    // Diagnostic: check if marked generated mermaid code blocks
+    var mermaidAfterMarked = (html.match(/language-mermaid/g) || []).length;
+    console.log('[Preview] After marked.parse - language-mermaid found:', mermaidAfterMarked);
+
     // Sanitize HTML (preserve data-math for KaTeX, SVG attrs for Mermaid)
     // ALLOW_UNKNOWN_PROTOCOLS: allow file:// and relative image paths
     html = DOMPurify.sanitize(html, {
@@ -69,6 +73,10 @@ var Preview = (() => {
       ADD_ATTR: ['viewBox', 'd', 'fill', 'stroke', 'stroke-width', 'cx', 'cy', 'r', 'x', 'y', 'x1', 'y1', 'x2', 'y2', 'points', 'transform', 'text-anchor', 'dominant-baseline', 'marker-end', 'marker-start', 'refX', 'refY', 'orient', 'markerWidth', 'markerHeight', 'data-math', 'class', 'src'],
       ALLOW_UNKNOWN_PROTOCOLS: true,
     });
+
+    // Diagnostic: check if DOMPurify preserved mermaid code blocks
+    var mermaidAfterPurify = (html.match(/language-mermaid/g) || []).length;
+    console.log('[Preview] After DOMPurify - language-mermaid found:', mermaidAfterPurify);
 
     previewEl.innerHTML = html;
 
