@@ -1,27 +1,44 @@
 /* Print Styles */
 @media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
   body {
-    background: #fff;
-    color: #000;
+    display: block !important;
   }
 
   .menu-bar,
   .toolbar,
+  .tab-bar,
   .status-bar,
   .editor-panel,
   .panel-resizer,
+  .folder-sidebar,
+  .sidebar-resizer,
   .dialog-overlay,
   .help-overlay {
     display: none !important;
   }
 
+  .body-content {
+    overflow: visible !important;
+    flex: none !important;
+    display: block !important;
+  }
+
   .main-content {
-    display: block;
+    display: block !important;
+    overflow: visible !important;
   }
 
   .preview-panel {
     width: 100% !important;
-    overflow: visible;
+    overflow: visible !important;
+    flex: none !important;
     background: #fff;
   }
 

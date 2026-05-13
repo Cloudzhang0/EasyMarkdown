@@ -41,6 +41,14 @@ var TabManager = (() => {
       StatusBar.setFileName(tabs[activeIdx].fileName);
       StatusBar.setSaveState('saved');
     } else {
+      // Web mode: load demo content on first visit
+      if (!window.electronAPI) {
+        var demoEl = document.getElementById('demoMarkdown');
+        if (demoEl && demoEl.textContent && demoEl.textContent.trim()) {
+          createTab('展示实例.md', demoEl.textContent.trim());
+          return;
+        }
+      }
       // Create default untitled tab
       createTab('', '');
     }
