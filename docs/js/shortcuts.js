@@ -69,10 +69,22 @@ var Shortcuts = (() => {
       App.exec('replace');
       return;
     }
+    // Ctrl+P - Print
+    if (isCtrl && !e.shiftKey && e.key === 'p') {
+      e.preventDefault();
+      App.exec('print');
+      return;
+    }
     // Ctrl+Shift+P - Toggle Preview
     if (isCtrl && e.shiftKey && e.key === 'P') {
       e.preventDefault();
       App.exec('togglePreview');
+      return;
+    }
+    // Ctrl+Shift+E - Toggle Folder Tree
+    if (isCtrl && e.shiftKey && e.key === 'E') {
+      e.preventDefault();
+      App.exec('toggleFolderTree');
       return;
     }
     // Ctrl+Shift+F - Full Screen Preview

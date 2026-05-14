@@ -11,18 +11,14 @@ var Preview = (() => {
   function init() {
     previewEl = document.getElementById('previewContent');
 
-    // Check library availability
-    if (typeof mermaid === 'undefined') console.warn('[Preview] Mermaid not loaded');
-    if (typeof katex === 'undefined') console.warn('[Preview] KaTeX not loaded');
-
     // Configure marked (highlight applied post-render since marked v12 deprecated highlight option)
     marked.setOptions({
       gfm: true,
       breaks: true,
     });
 
-    // Initialize mermaid
-    if (typeof mermaid !== 'undefined') {
+    // Load Mermaid dynamically (non-blocking — avoids 3.2MB parse delay at startup)
+    loadScript('lib/mermaid/mermaid.min.js', function() {
       try {
         mermaid.initialize({
           startOnLoad: false,
@@ -30,11 +26,34 @@ var Preview = (() => {
           securityLevel: 'loose',
         });
         mermaidReady = true;
+        // Re-render any existing Mermaid blocks in the preview
+        if (previewEl && previewEl.querySelector('code.language-mermaid')) {
+          renderMermaid();
+        }
       } catch (e) {
         console.error('[Preview] Mermaid init error:', e);
-        mermaidReady = false;
       }
-    }
+    });
+
+    // Load KaTeX dynamically (non-blocking)
+    loadScript('lib/katex/katex.min.js', function() {
+      loadScript('lib/katex/auto-render.min.js', function() {
+        // Re-render any existing math in the preview
+        if (previewEl) {
+          renderMath();
+        }
+      });
+    });
+  }
+
+  function loadScript(src, callback) {
+    var script = document.createElement('script');
+    script.src = src;
+    if (callback) script.onload = callback;
+    script.onerror = function() {
+      console.error('[Preview] Failed to load script:', src);
+    };
+    (document.head || document.body).appendChild(script);
   }
 
   function update(content) {
@@ -105,10 +124,7 @@ var Preview = (() => {
   }
 
   function renderMath() {
-    if (typeof katex === 'undefined') {
-      console.error('[Preview] KaTeX not loaded, math rendering skipped');
-      return;
-    }
+    if (typeof katex === 'undefined') return; // Silently skip, KaTeX not yet loaded
 
     // Block math
     previewEl.querySelectorAll('.katex-display-placeholder').forEach(el => {
