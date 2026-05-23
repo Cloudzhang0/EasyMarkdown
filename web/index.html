@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="css/folder-tree.css">
   <link rel="stylesheet" href="css/help.css">
   <link rel="stylesheet" href="css/print.css" media="print">
+
 </head>
 <body class="theme-light">
   <!-- Menu Bar -->
@@ -50,6 +51,7 @@
           <button class="menu-command" data-action="exportHTML" data-i18n="menu.exportHTML">Export HTML</button>
           <button class="menu-command" data-action="exportPDF" data-i18n="menu.exportPDF">Export PDF</button>
           <div class="menu-separator"></div>
+          <button class="menu-command" data-action="printPreview" data-i18n="menu.printPreview">Print Preview</button>
           <button class="menu-command" data-action="print" data-i18n="menu.print">Print</button>
           <div class="menu-separator"></div>
           <button class="menu-command" data-action="close" data-i18n="menu.close">Close</button>
@@ -317,7 +319,7 @@
   <script src="js/app.js"></script>
 
   <!-- Demo Markdown Content (embedded for web version first-visit) -->
-  <script type="text/template" id="demoMarkdown">## 实例展示
+  <script type="text/template" id="demoMarkdown" data-demo-version="1">## 实例展示
 > 这是一个引用块。通常用来引用别人的话，或者做重要提示。
 
 | 功能模块 | 网页版 | 桌面版 | 说明 |
@@ -368,6 +370,8 @@ graph TD
   C --> E[完成]
   D --> E
 ```
+
+
 </script>
 </body>
 </html>

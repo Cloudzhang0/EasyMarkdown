@@ -231,8 +231,82 @@ var FileManager = (() => {
     Utils.downloadFile(html, filename, 'text/html;charset=utf-8');
   }
 
-  function exportPDF() { window.print(); }
-  function printDoc() { window.print(); }
+  // Print via off-screen iframe — ensures page-number markers from export HTML are included.
+  // Must have proper dimensions for correct layout/pagination; 1x1px would collapse content.
+  function printViaIframe() {
+    var html = Preview.getExportHTML();
+    var iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:0;left:-9999px;width:960px;height:100%;border:none;';
+    iframe.srcdoc = html;
+    document.body.appendChild(iframe);
+
+    iframe.onload = function() {
+      // Small delay to let scripts (page markers) execute
+      setTimeout(function() {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        // Clean up after print dialog closes
+        setTimeout(function() {
+          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        }, 1000);
+      }, 500);
+    };
+  }
+
+  function exportPDF() { printViaIframe(); }
+  function printDoc() { printViaIframe(); }
+
+  function printPreview() {
+    var html = Preview.getExportHTML();
+
+    // Remove any existing preview overlay
+    var existing = document.getElementById('printPreviewOverlay');
+    if (existing) existing.parentNode.removeChild(existing);
+
+    // Create overlay container
+    var overlay = document.createElement('div');
+    overlay.id = 'printPreviewOverlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:99999;display:flex;flex-direction:column;';
+
+    // Toolbar
+    var toolbar = document.createElement('div');
+    toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#f5f5f5;border-bottom:1px solid #ddd;flex-shrink:0;';
+    toolbar.innerHTML = '<span style="font-weight:600;font-size:14px;">' + (I18n.t ? I18n.t('menu.printPreview') : 'Print Preview') + '</span>'
+      + '<span style="font-size:12px;color:#888;">Tip: Enable "Headers and footers" in Print dialog for page numbers</span>'
+      + '<div>'
+      + '<button id="printPreviewPrintBtn" style="margin-right:8px;padding:4px 12px;cursor:pointer;">Print</button>'
+      + '<button id="printPreviewCloseBtn" style="padding:4px 12px;cursor:pointer;">Close</button>'
+      + '</div>';
+    overlay.appendChild(toolbar);
+
+    // Iframe with srcdoc — scripts execute reliably in all browsers
+    var iframe = document.createElement('iframe');
+    iframe.srcdoc = html;
+    iframe.style.cssText = 'flex:1;width:100%;border:none;';
+    overlay.appendChild(iframe);
+
+    document.body.appendChild(overlay);
+
+    // Close button
+    document.getElementById('printPreviewCloseBtn').addEventListener('click', function() {
+      document.body.removeChild(overlay);
+    });
+
+    // Print button — prints the iframe content
+    document.getElementById('printPreviewPrintBtn').addEventListener('click', function() {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    });
+
+    // ESC to close
+    var escHandler = function(e) {
+      if (e.key === 'Escape') {
+        document.body.removeChild(overlay);
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+  }
 
   function closeFile() {
     var tab = TabManager.getCurrentTab();
@@ -307,7 +381,7 @@ var FileManager = (() => {
   return {
     init: init, newFile: newFile, openFileDialog: openFileDialog,
     openFile: openFile, save: save, saveAs: saveAs,
-    exportHTML: exportHTML, exportPDF: exportPDF, printDoc: printDoc,
+    exportHTML: exportHTML, exportPDF: exportPDF, printDoc: printDoc, printPreview: printPreview,
     closeFile: closeFile, closeAll: closeAll,
     getFileName: getFileName, isDocumentDirty: isDocumentDirty,
     getRecentFiles: getRecentFiles, openRecentFile: openRecentFile

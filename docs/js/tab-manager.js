@@ -40,6 +40,9 @@ var TabManager = (() => {
       Editor.setValue(tabs[activeIdx].content);
       StatusBar.setFileName(tabs[activeIdx].fileName);
       StatusBar.setSaveState('saved');
+
+      // Check for demo content update (web mode only)
+      refreshDemoIfNeeded();
     } else {
       // Web mode: load demo content on first visit
       if (!window.electronAPI) {
@@ -70,6 +73,39 @@ var TabManager = (() => {
     switchTab(tab.id);
     saveSession();
     return tab;
+  }
+
+  // Check if embedded demo has been updated since last visit (web mode)
+  function refreshDemoIfNeeded() {
+    if (window.electronAPI) return;
+    var demoEl = document.getElementById('demoMarkdown');
+    if (!demoEl) return;
+    var embeddedVersion = demoEl.getAttribute('data-demo-version') || '0';
+    var savedVersion = localStorage.getItem('easymarkdown_demo_version') || '0';
+    if (embeddedVersion === savedVersion) return;
+
+    // Version changed — find and update existing demo tab
+    var newContent = demoEl.textContent.trim();
+    var found = false;
+    for (var i = 0; i < tabs.length; i++) {
+      if (tabs[i].fileName === '展示实例.md') {
+        tabs[i].content = newContent;
+        if (tabs[i].id === activeTabId) {
+          Editor.setValue(newContent);
+        }
+        found = true;
+        break;
+      }
+    }
+    // If no demo tab exists but there's exactly one empty tab, replace it
+    if (!found && tabs.length === 1 && !tabs[0].fileName && !tabs[0].content && !tabs[0].isDirty) {
+      tabs = [];
+      activeTabId = null;
+      nextId = 1;
+      createTab('展示实例.md', newContent);
+    }
+    localStorage.setItem('easymarkdown_demo_version', embeddedVersion);
+    if (found) saveSession();
   }
 
   function switchTab(id) {

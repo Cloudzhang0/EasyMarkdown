@@ -1,4 +1,12 @@
 /* Print Styles */
+
+/* Page margin — leaves room for browser's built-in headers/footers (page numbers).
+   Chrome/Electron do NOT support @page margin boxes (@bottom-center etc.),
+   so page numbers are handled by the browser's "Headers and footers" option. */
+@page {
+  margin: 1.5cm;
+}
+
 @media print {
   html, body {
     height: auto !important;
@@ -69,9 +77,5 @@
 
   .preview-content h1, .preview-content h2, .preview-content h3 {
     page-break-after: avoid;
-  }
-
-  @page {
-    margin: 2cm;
   }
 }

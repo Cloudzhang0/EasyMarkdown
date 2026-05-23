@@ -267,6 +267,7 @@ var App = (() => {
         case 'saveAs': FileManager.saveAs(); break;
         case 'exportHTML': FileManager.exportHTML(); break;
         case 'exportPDF': FileManager.exportPDF(); break;
+        case 'printPreview': FileManager.printPreview(); break;
         case 'print': FileManager.printDoc(); break;
         case 'close': FileManager.closeFile(); break;
         case 'closeAll': FileManager.closeAll(); break;
