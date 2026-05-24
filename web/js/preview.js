@@ -273,9 +273,7 @@ var Preview = (() => {
   function getExportHTML() {
     var content = previewEl ? previewEl.innerHTML : '';
 
-    // Screen page position indicator + JS page markers for print
-    // iframe is sized to ~700px wide (≈A4 print content area) so offsetHeight
-    // measurements match print layout — text wraps the same way.
+    // Screen-only page position indicator (for print preview iframe scrolling)
     var indicatorHTML = '\n'
       + '<div id="pageIndicator" style="position:fixed;bottom:8px;right:16px;background:rgba(0,0,0,0.74);color:#fff;padding:5px 12px;border-radius:4px;font-size:12px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;z-index:9999;pointer-events:none;">Page 1 / 1</div>\n'
       + '<script>\n'
@@ -295,41 +293,10 @@ var Preview = (() => {
       + '    u();setTimeout(u,200);\n'
       + '    window.addEventListener("load",function(){setTimeout(u,300);});\n'
       + '  }\n'
-      + '  setTimeout(insertPrintMarkers,400);\n'
-      + '  window.addEventListener("load",function(){setTimeout(insertPrintMarkers,600);});\n'
-      + '  function insertPrintMarkers(){\n'
-      + '    if(document.querySelector(".print-page-num"))return;\n'
-      + '    var body=document.body,pageH=880,blocks=[];\n'
-      + '    for(var i=0;i<body.children.length;i++){\n'
-      + '      var c=body.children[i];\n'
-      + '      if(c.id==="pageIndicator"||c.tagName==="SCRIPT"||c.tagName==="STYLE"||c.className==="print-page-num")continue;\n'
-      + '      blocks.push(c);\n'
-      + '    }\n'
-      + '    if(blocks.length<1)return;\n'
-      + '    // Page 1 marker (no forced page break, sits at top)\n'
-      + '    var fm1=document.createElement("div");\n'
-      + '    fm1.className="print-page-num page-num-first";\n'
-      + '    fm1.textContent="- 1 -";\n'
-      + '    body.insertBefore(fm1,body.firstChild);\n'
-      + '    var acc=0,pn=2;\n'
-      + '    for(var i=0;i<blocks.length;i++){\n'
-      + '      acc+=blocks[i].offsetHeight||0;\n'
-      + '      if(acc>pageH&&i<blocks.length-1){\n'
-      + '        var m=document.createElement("div");\n'
-      + '        m.className="print-page-num";\n'
-      + '        m.textContent="- "+pn+" -";\n'
-      + '        body.insertBefore(m,blocks[i+1]);\n'
-      + '        pn++;acc=blocks[i].offsetHeight||0;\n'
-      + '      }\n'
-      + '    }\n'
-      + '    var s=document.createElement("style");\n'
-      + '    s.textContent=".print-page-num{display:none;text-align:center;font-size:9pt;color:#888;padding:4px 0 12px;page-break-before:always;}.print-page-num.page-num-first{page-break-before:auto;}@media print{.print-page-num{display:block!important;}}";\n'
-      + '    document.head.appendChild(s);\n'
-      + '  }\n'
       + '})();\n'
       + '</script>';
 
-    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>EasyMarkdown Export</title>\n<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">\n<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">\n<style>\nbody { font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 860px; margin: 0 auto; padding: 32px; color: #24292f; line-height: 1.6; font-size: 14px; }\nh1 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }\nh2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }\na { color: #0969da; text-decoration: none; } a:hover { text-decoration: underline; }\ncode { padding: 0.2em 0.4em; background: #f6f8fa; border-radius: 3px; font-size: 85%; }\npre { padding: 16px; background: #f6f8fa; border-radius: 4px; overflow: auto; border: 1px solid #e8eaed; }\npre code { padding: 0; background: transparent; }\nblockquote { border-left: 4px solid #d0d7de; padding: 0 1em; color: #57606a; margin: 0 0 16px; }\ntable { border-collapse: collapse; width: 100%; margin-bottom: 16px; }\nth, td { padding: 6px 13px; border: 1px solid #d0d7de; }\nth { background: #f6f8fa; }\nimg { max-width: 100%; }\nhr { height: 0.25em; background: #d0d7de; border: 0; margin: 24px 0; }\n.task-list-item { list-style: none; margin-left: -1.5em; }\n.task-list-item input { margin-right: 0.5em; }\n\n/* Page margin — leaves room for browser built-in headers/footers.\n   JS injects .print-page-num markers for page numbers at print time. */\n@page { margin: 1.5cm; margin-bottom: 2.2cm; }\n@media print {\n  pre { page-break-inside: avoid; }\n  img { page-break-inside: avoid; }\n  table { page-break-inside: avoid; }\n  h1, h2, h3 { page-break-after: avoid; }\n  #pageIndicator { display: none !important; }\n}\n</style>\n</head>\n<body>\n' + content + indicatorHTML + '\n</body>\n</html>';
+    return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>EasyMarkdown Export</title>\n<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">\n<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">\n<style>\nbody { font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 860px; margin: 0 auto; padding: 32px; padding-bottom: 48px; color: #24292f; line-height: 1.6; font-size: 14px; }\nh1 { font-size: 2em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }\nh2 { font-size: 1.5em; border-bottom: 1px solid #eaecef; padding-bottom: 0.3em; }\na { color: #0969da; text-decoration: none; } a:hover { text-decoration: underline; }\ncode { padding: 0.2em 0.4em; background: #f6f8fa; border-radius: 3px; font-size: 85%; }\npre { padding: 16px; background: #f6f8fa; border-radius: 4px; overflow: auto; border: 1px solid #e8eaed; }\npre code { padding: 0; background: transparent; }\nblockquote { border-left: 4px solid #d0d7de; padding: 0 1em; color: #57606a; margin: 0 0 16px; }\ntable { border-collapse: collapse; width: 100%; margin-bottom: 16px; }\nth, td { padding: 6px 13px; border: 1px solid #d0d7de; }\nth { background: #f6f8fa; }\nimg { max-width: 100%; }\nhr { height: 0.25em; background: #d0d7de; border: 0; margin: 24px 0; }\n.task-list-item { list-style: none; margin-left: -1.5em; }\n.task-list-item input { margin-right: 0.5em; }\n\n/* Page margin leaves room for footer. Custom counter pgnum increments per page. */\n@page { margin: 1.5cm; margin-bottom: 2.5cm; counter-increment: pgnum; }\n\n@media print {\n  pre { page-break-inside: avoid; }\n  img { page-break-inside: avoid; }\n  table { page-break-inside: avoid; }\n  h1, h2, h3 { page-break-after: avoid; }\n  #pageIndicator { display: none !important; }\n  #printFooter {\n    display: block !important;\n    position: fixed;\n    bottom: 0;\n    left: 50%;\n    transform: translateX(-50%);\n    text-align: center;\n    font-size: 9pt;\n    color: #888;\n    z-index: 10000;\n    padding: 0 12px 4px;\n  }\n  #printFooter::after {\n    content: counter(pgnum);\n  }\n}\n</style>\n</head>\n<body>\n' + content + '\n<div id="printFooter">Page </div>\n' + indicatorHTML + '\n</body>\n</html>';
   }
 
   return {
