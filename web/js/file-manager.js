@@ -232,16 +232,17 @@ var FileManager = (() => {
   }
 
   // Print via off-screen iframe — ensures page-number markers from export HTML are included.
-  // Must have proper dimensions for correct layout/pagination; 1x1px would collapse content.
+  // iframe width (700px) ≈ A4 print content area width, so offsetHeight measurements
+  // in the JS page-marker script match the print layout's text wrapping.
   function printViaIframe() {
     var html = Preview.getExportHTML();
     var iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:0;left:-9999px;width:960px;height:100%;border:none;';
+    iframe.style.cssText = 'position:fixed;top:0;left:-9999px;width:700px;height:100%;border:none;';
     iframe.srcdoc = html;
     document.body.appendChild(iframe);
 
     iframe.onload = function() {
-      // Small delay to let scripts (page markers) execute
+      // Delay to let scripts (page markers) execute
       setTimeout(function() {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
