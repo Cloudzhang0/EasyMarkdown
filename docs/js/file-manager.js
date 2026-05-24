@@ -237,7 +237,7 @@ var FileManager = (() => {
   function printViaIframe() {
     var html = Preview.getExportHTML();
     var iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;top:0;left:-9999px;width:700px;height:100%;border:none;';
+    iframe.style.cssText = 'position:fixed;top:0;left:-9999px;width:680px;height:100%;border:none;';
     iframe.srcdoc = html;
     document.body.appendChild(iframe);
 
@@ -273,7 +273,7 @@ var FileManager = (() => {
     var toolbar = document.createElement('div');
     toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#f5f5f5;border-bottom:1px solid #ddd;flex-shrink:0;';
     toolbar.innerHTML = '<span style="font-weight:600;font-size:14px;">' + (I18n.t ? I18n.t('menu.printPreview') : 'Print Preview') + '</span>'
-      + '<span style="font-size:12px;color:#888;">Page numbers are automatically added by CSS counter</span>'
+      + '<span style="font-size:12px;color:#888;">Page numbers: enable "Headers and footers" in Print dialog (ON by default)</span>'
       + '<div>'
       + '<button id="printPreviewPrintBtn" style="margin-right:8px;padding:4px 12px;cursor:pointer;">Print</button>'
       + '<button id="printPreviewCloseBtn" style="padding:4px 12px;cursor:pointer;">Close</button>'
