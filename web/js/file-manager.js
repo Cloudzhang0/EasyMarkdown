@@ -272,7 +272,7 @@ var FileManager = (() => {
     var toolbar = document.createElement('div');
     toolbar.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#f5f5f5;border-bottom:1px solid #ddd;flex-shrink:0;';
     toolbar.innerHTML = '<span style="font-weight:600;font-size:14px;">' + (I18n.t ? I18n.t('menu.printPreview') : 'Print Preview') + '</span>'
-      + '<span style="font-size:12px;color:#888;">Tip: Enable "Headers and footers" in Print dialog for page numbers</span>'
+      + '<span style="font-size:12px;color:#888;">Page numbers are automatically added by CSS counter</span>'
       + '<div>'
       + '<button id="printPreviewPrintBtn" style="margin-right:8px;padding:4px 12px;cursor:pointer;">Print</button>'
       + '<button id="printPreviewCloseBtn" style="padding:4px 12px;cursor:pointer;">Close</button>'
